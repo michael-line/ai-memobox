@@ -412,7 +412,7 @@
       recognition.start();
     }
 
-    // 呼叫 Gemini 3.8-flash 提煉
+    // 附帶 8 秒超時保護與乾淨錯誤解析的 Gemini 呼叫函數
     async function extractWithGemini(rawText, apiKey) {
       const todayStr = new Date().toISOString().split('T')[0];
       const systemPrompt = `你是一個個人第二大腦「AI記憶夾」分析助手。今天是 ${todayStr}。
@@ -431,25 +431,39 @@
   "reminder_date": "YYYY-MM-DD 或空字串"
 }`;
 
-      // 直接使用官方指名的 gemini-3.8-flash
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: `${systemPrompt}\n\n使用者輸入內容：${rawText}` }] }]
-        })
-      });
-      const data = await res.json();
-      if (data.error) {
-        throw new Error(data.error.message || JSON.stringify(data.error));
+      // 使用最標準相容的 gemini-1.5-flash，並設定 8 秒超時以防止無限卡住
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+      try {
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: controller.signal,
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: `${systemPrompt}\n\n使用者輸入內容：${rawText}` }] }]
+          })
+        });
+        clearTimeout(timeoutId);
+
+        const data = await res.json();
+        if (data.error) {
+          throw new Error(data.error.message || JSON.stringify(data.error));
+        }
+
+        let textOutput = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!textOutput) throw new Error("API 未回傳有效文字");
+
+        textOutput = textOutput.replace(/```json/gi, '').replace(/```/g, '').trim();
+        return JSON.parse(textOutput);
+      } catch (err) {
+        clearTimeout(timeoutId);
+        if (err.name === 'AbortError') {
+          throw new Error("AI 連線超時（超過8秒未回應）");
+        }
+        throw err;
       }
-
-      let textOutput = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!textOutput) throw new Error("API 未回傳有效文字");
-
-      textOutput = textOutput.replace(/```json/gi, '').replace(/```/g, '').trim();
-      return JSON.parse(textOutput);
     }
 
     async function submitToGoogleCloud() {
@@ -486,7 +500,7 @@
           try {
             aiResult = await extractWithGemini(text, apiKey);
           } catch (err) {
-            alert("⚠️ Gemini 分析提示：\n" + err.message);
+            alert("⚠️ Gemini 分析提示：\n" + err.message + "\n\n將改用基本標題存入雲端。");
           }
         }
 

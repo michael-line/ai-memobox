@@ -413,6 +413,7 @@
     }
 
     // 附帶 8 秒超時保護與乾淨錯誤解析的 Gemini 呼叫函數
+// 自動探測並調用支援 generateContent 的模型
     async function extractWithGemini(rawText, apiKey) {
       const todayStr = new Date().toISOString().split('T')[0];
       const systemPrompt = `你是一個個人第二大腦「AI記憶夾」分析助手。今天是 ${todayStr}。
@@ -431,10 +432,35 @@
   "reminder_date": "YYYY-MM-DD 或空字串"
 }`;
 
-      // 使用最標準相容的 gemini-1.5-flash，並設定 8 秒超時以防止無限卡住
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+      // 步驟 1：先向 API 查詢你這個帳號目前可用的模型列表
+      let activeModel = "gemini-2.0-flash";
+      try {
+        const listRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+        const listData = await listRes.json();
+        if (listData.models && listData.models.length > 0) {
+          // 找出支援 generateContent 且名稱帶 flash 或 pro 的模型
+          const usable = listData.models.find(m => 
+            m.supportedGenerationMethods && 
+            m.supportedGenerationMethods.includes("generateContent") &&
+            m.name.includes("flash")
+          ) || listData.models.find(m => 
+            m.supportedGenerationMethods && 
+            m.supportedGenerationMethods.includes("generateContent")
+          );
+
+          if (usable) {
+            // 模型名稱通常為 "models/gemini-xxx"，取後半部或全名
+            activeModel = usable.name.replace("models/", "");
+          }
+        }
+      } catch (e) {
+        console.warn("無法取得模型清單，使用預設：", e);
+      }
+
+      // 步驟 2：使用動態選定的模型進行分析
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${activeModel}:generateContent?key=${apiKey}`;
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
 
       try {
         const res = await fetch(url, {
@@ -449,19 +475,17 @@
 
         const data = await res.json();
         if (data.error) {
-          throw new Error(data.error.message || JSON.stringify(data.error));
+          throw new Error(`[${activeModel}] ` + (data.error.message || JSON.stringify(data.error)));
         }
 
         let textOutput = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!textOutput) throw new Error("API 未回傳有效文字");
+        if (!textOutput) throw new Error("API 未回傳文字");
 
         textOutput = textOutput.replace(/```json/gi, '').replace(/```/g, '').trim();
         return JSON.parse(textOutput);
       } catch (err) {
         clearTimeout(timeoutId);
-        if (err.name === 'AbortError') {
-          throw new Error("AI 連線超時（超過8秒未回應）");
-        }
+        if (err.name === 'AbortError') throw new Error("連線超時（超過10秒）");
         throw err;
       }
     }

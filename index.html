@@ -36,6 +36,7 @@
 </head>
 <body class="bg-[#F8FAF9] text-slate-800 antialiased min-h-screen">
 
+  <!-- 1. 頂部狀態/導覽列 -->
   <header class="sticky top-0 z-30 bg-[#F8FAF9]/90 backdrop-blur-md px-5 py-3.5 flex items-center justify-between">
     <div class="flex items-center space-x-2">
       <div class="w-8 h-8 rounded-full bg-brand flex items-center justify-center text-white text-base">
@@ -53,8 +54,10 @@
     </div>
   </header>
 
+  <!-- 主內容區 (手機滾動) -->
   <main class="max-w-md mx-auto px-5 pt-2 pb-safe space-y-5">
 
+    <!-- 2. 個人化問候語 -->
     <div>
       <h2 class="text-2xl font-bold text-slate-900 flex items-center gap-1.5">
         <span id="greetingText">晚安</span>，<span id="userNameDisplay">我的朋友</span>
@@ -62,6 +65,7 @@
       <p class="text-xs text-slate-500 mt-1">看到有用的東西，先丟進來；之後用一句話找回。</p>
     </div>
 
+    <!-- 3. AI 自然語言搜尋框 -->
     <div class="relative bg-white rounded-2xl shadow-sm border border-slate-200/80 p-1.5 flex items-center">
       <div class="pl-3 pr-2 text-brand text-lg">
         <i class="fa-solid fa-wand-magic-sparkles"></i>
@@ -72,11 +76,13 @@
       </button>
     </div>
 
+    <!-- 4. 主按鈕：添加記憶 -->
     <button onclick="openAddModal()" class="w-full bg-brand hover:bg-brand-dark active:scale-[0.99] text-white py-3.5 rounded-2xl font-semibold text-base shadow-sm flex items-center justify-center gap-2 transition">
       <i class="fa-solid fa-plus text-sm"></i>
       <span>添加記憶</span>
     </button>
 
+    <!-- 5. 未分類提醒卡片 (淡橘色底) -->
     <div id="unclassifiedBanner" class="bg-brand-accent border border-brand-borderOrange rounded-2xl p-3.5 flex items-start justify-between gap-2 shadow-xs cursor-pointer" onclick="filterByCategory('未分類')">
       <div class="flex items-start gap-2.5">
         <div class="text-brand-orangeText text-lg mt-0.5">
@@ -94,6 +100,7 @@
       </span>
     </div>
 
+    <!-- 6. 常用區 -->
     <div>
       <div class="flex items-center justify-between text-xs text-slate-500 mb-2 font-medium">
         <span class="flex items-center gap-1 text-slate-700"><i class="fa-solid fa-star text-amber-400"></i> 常用</span>
@@ -110,6 +117,7 @@
       </div>
     </div>
 
+    <!-- 7. 文件分類 (雙欄網格卡片) -->
     <div>
       <div class="flex items-center justify-between text-xs text-slate-500 mb-2.5 font-medium">
         <span class="text-slate-800 font-bold text-sm">文件分類</span>
@@ -189,6 +197,7 @@
       </div>
     </div>
 
+    <!-- 8. 即將到來 / 提醒事項 -->
     <div>
       <div class="flex items-center justify-between text-xs text-slate-500 mb-2 font-medium">
         <span class="text-slate-800 font-bold text-sm">即將到來</span>
@@ -201,6 +210,7 @@
       </div>
     </div>
 
+    <!-- 9. 指派給我的任務 (待辦清單) -->
     <div>
       <div class="text-slate-800 font-bold text-sm mb-2">指派給我的任務</div>
       <div id="todoContainer" class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs space-y-2 text-xs text-slate-400">
@@ -208,6 +218,7 @@
       </div>
     </div>
 
+    <!-- 記憶清單展示區 -->
     <div id="notesSection" class="pt-2">
       <div class="flex items-center justify-between mb-2">
         <h3 class="text-xs font-bold text-slate-700" id="currentFilterTitle">最近新增記憶</h3>
@@ -218,11 +229,13 @@
 
   </main>
 
+  <!-- 10. 右下角懸浮按鈕：小幫手 -->
   <button onclick="askAIAssistant()" class="fixed right-4 bottom-20 z-40 bg-brand text-white px-3.5 py-2.5 rounded-full shadow-lg flex items-center gap-1.5 text-xs font-semibold hover:bg-brand-dark active:scale-95 transition">
     <i class="fa-regular fa-comment-dots text-sm"></i>
     <span>小幫手</span>
   </button>
 
+  <!-- 11. 底部導覽列 -->
   <nav class="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-slate-200 px-6 py-2 flex items-center justify-between z-30 max-w-md mx-auto">
     <button onclick="showAllNotes()" class="flex flex-col items-center text-brand">
       <i class="fa-solid fa-house text-lg"></i>
@@ -247,6 +260,7 @@
     </button>
   </nav>
 
+  <!-- 新增記憶彈出視窗 -->
   <div id="addModal" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-end sm:items-center justify-center hidden">
     <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-5 space-y-4 shadow-xl">
       <div class="flex items-center justify-between border-b pb-2">
@@ -278,6 +292,7 @@
     </div>
   </div>
 
+  <!-- 設定 Modal -->
   <div id="configModal" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white w-full max-w-sm rounded-2xl p-5 space-y-3.5 shadow-xl">
       <h3 class="text-sm font-bold text-slate-900">設定 Google 雲端與 AI</h3>
@@ -412,8 +427,7 @@
       recognition.start();
     }
 
-    // 附帶 8 秒超時保護與乾淨錯誤解析的 Gemini 呼叫函數
-// 自動探測並調用支援 generateContent 的模型
+    // 正確鎖定 gemini-3.8-flash 模型端點
     async function extractWithGemini(rawText, apiKey) {
       const todayStr = new Date().toISOString().split('T')[0];
       const systemPrompt = `你是一個個人第二大腦「AI記憶夾」分析助手。今天是 ${todayStr}。
@@ -432,35 +446,9 @@
   "reminder_date": "YYYY-MM-DD 或空字串"
 }`;
 
-      // 步驟 1：先向 API 查詢你這個帳號目前可用的模型列表
-      let activeModel = "gemini-2.0-flash";
-      try {
-        const listRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
-        const listData = await listRes.json();
-        if (listData.models && listData.models.length > 0) {
-          // 找出支援 generateContent 且名稱帶 flash 或 pro 的模型
-          const usable = listData.models.find(m => 
-            m.supportedGenerationMethods && 
-            m.supportedGenerationMethods.includes("generateContent") &&
-            m.name.includes("flash")
-          ) || listData.models.find(m => 
-            m.supportedGenerationMethods && 
-            m.supportedGenerationMethods.includes("generateContent")
-          );
-
-          if (usable) {
-            // 模型名稱通常為 "models/gemini-xxx"，取後半部或全名
-            activeModel = usable.name.replace("models/", "");
-          }
-        }
-      } catch (e) {
-        console.warn("無法取得模型清單，使用預設：", e);
-      }
-
-      // 步驟 2：使用動態選定的模型進行分析
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${activeModel}:generateContent?key=${apiKey}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      const timeoutId = setTimeout(() => controller.abort(), 12000);
 
       try {
         const res = await fetch(url, {
@@ -475,17 +463,17 @@
 
         const data = await res.json();
         if (data.error) {
-          throw new Error(`[${activeModel}] ` + (data.error.message || JSON.stringify(data.error)));
+          throw new Error(data.error.message || JSON.stringify(data.error));
         }
 
         let textOutput = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!textOutput) throw new Error("API 未回傳文字");
+        if (!textOutput) throw new Error("API 未回傳有效文字");
 
         textOutput = textOutput.replace(/```json/gi, '').replace(/```/g, '').trim();
         return JSON.parse(textOutput);
       } catch (err) {
         clearTimeout(timeoutId);
-        if (err.name === 'AbortError') throw new Error("連線超時（超過10秒）");
+        if (err.name === 'AbortError') throw new Error("連線超時（超過12秒未回應）");
         throw err;
       }
     }
@@ -524,7 +512,7 @@
           try {
             aiResult = await extractWithGemini(text, apiKey);
           } catch (err) {
-            alert("⚠️ Gemini 分析提示：\n" + err.message + "\n\n將改用基本標題存入雲端。");
+            alert("⚠️ Gemini 分析提示：\n" + err.message);
           }
         }
 

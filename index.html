@@ -520,6 +520,10 @@
           } catch (err) {
             alert("⚠️ Gemini 分析未成功：\n" + err.message + "\n\n將改用基本標題存入雲端。");
           }
+        alert("【AI 解析結果檢查】\n標題：" + aiResult.title + 
+              "\n分類：" + aiResult.category + 
+              "\n待辦事項：" + JSON.stringify(aiResult.action_items) + 
+              "\n提醒日期：" + aiResult.reminder_date);  
         } else if (!apiKey) {
           alert("提示：尚未設定 Gemini API Key，將以原始文字直接存入。");
         }

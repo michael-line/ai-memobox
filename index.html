@@ -36,7 +36,6 @@
 </head>
 <body class="bg-[#F8FAF9] text-slate-800 antialiased min-h-screen">
 
-  <!-- 1. 頂部狀態/導覽列 -->
   <header class="sticky top-0 z-30 bg-[#F8FAF9]/90 backdrop-blur-md px-5 py-3.5 flex items-center justify-between">
     <div class="flex items-center space-x-2">
       <div class="w-8 h-8 rounded-full bg-brand flex items-center justify-center text-white text-base">
@@ -54,10 +53,8 @@
     </div>
   </header>
 
-  <!-- 主內容區 (手機滾動) -->
   <main class="max-w-md mx-auto px-5 pt-2 pb-safe space-y-5">
 
-    <!-- 2. 個人化問候語 -->
     <div>
       <h2 class="text-2xl font-bold text-slate-900 flex items-center gap-1.5">
         <span id="greetingText">晚安</span>，<span id="userNameDisplay">我的朋友</span>
@@ -65,7 +62,6 @@
       <p class="text-xs text-slate-500 mt-1">看到有用的東西，先丟進來；之後用一句話找回。</p>
     </div>
 
-    <!-- 3. AI 自然語言搜尋框 -->
     <div class="relative bg-white rounded-2xl shadow-sm border border-slate-200/80 p-1.5 flex items-center">
       <div class="pl-3 pr-2 text-brand text-lg">
         <i class="fa-solid fa-wand-magic-sparkles"></i>
@@ -76,13 +72,11 @@
       </button>
     </div>
 
-    <!-- 4. 主按鈕：添加記憶 -->
     <button onclick="openAddModal()" class="w-full bg-brand hover:bg-brand-dark active:scale-[0.99] text-white py-3.5 rounded-2xl font-semibold text-base shadow-sm flex items-center justify-center gap-2 transition">
       <i class="fa-solid fa-plus text-sm"></i>
       <span>添加記憶</span>
     </button>
 
-    <!-- 5. 未分類提醒卡片 (淡橘色底) -->
     <div id="unclassifiedBanner" class="bg-brand-accent border border-brand-borderOrange rounded-2xl p-3.5 flex items-start justify-between gap-2 shadow-xs cursor-pointer" onclick="filterByCategory('未分類')">
       <div class="flex items-start gap-2.5">
         <div class="text-brand-orangeText text-lg mt-0.5">
@@ -100,7 +94,6 @@
       </span>
     </div>
 
-    <!-- 6. 常用區 -->
     <div>
       <div class="flex items-center justify-between text-xs text-slate-500 mb-2 font-medium">
         <span class="flex items-center gap-1 text-slate-700"><i class="fa-solid fa-star text-amber-400"></i> 常用</span>
@@ -117,7 +110,6 @@
       </div>
     </div>
 
-    <!-- 7. 文件分類 (雙欄網格卡片) -->
     <div>
       <div class="flex items-center justify-between text-xs text-slate-500 mb-2.5 font-medium">
         <span class="text-slate-800 font-bold text-sm">文件分類</span>
@@ -229,13 +221,11 @@
 
   </main>
 
-  <!-- 10. 右下角懸浮按鈕：小幫手 -->
   <button onclick="askAIAssistant()" class="fixed right-4 bottom-20 z-40 bg-brand text-white px-3.5 py-2.5 rounded-full shadow-lg flex items-center gap-1.5 text-xs font-semibold hover:bg-brand-dark active:scale-95 transition">
     <i class="fa-regular fa-comment-dots text-sm"></i>
     <span>小幫手</span>
   </button>
 
-  <!-- 11. 底部導覽列 -->
   <nav class="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-slate-200 px-6 py-2 flex items-center justify-between z-30 max-w-md mx-auto">
     <button onclick="showAllNotes()" class="flex flex-col items-center text-brand">
       <i class="fa-solid fa-house text-lg"></i>
@@ -260,7 +250,6 @@
     </button>
   </nav>
 
-  <!-- 新增記憶彈出視窗 -->
   <div id="addModal" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-end sm:items-center justify-center hidden">
     <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-5 space-y-4 shadow-xl">
       <div class="flex items-center justify-between border-b pb-2">
@@ -292,7 +281,6 @@
     </div>
   </div>
 
-  <!-- 設定 Modal -->
   <div id="configModal" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white w-full max-w-sm rounded-2xl p-5 space-y-3.5 shadow-xl">
       <h3 class="text-sm font-bold text-slate-900">設定 Google 雲端與 AI</h3>
@@ -427,57 +415,7 @@
       recognition.start();
     }
 
-    // 正確鎖定 gemini-3.8-flash 模型端點
-    async function extractWithGemini(rawText, apiKey) {
-      const todayStr = new Date().toISOString().split('T')[0];
-      const systemPrompt = `你是一個個人第二大腦「AI記憶夾」分析助手。今天是 ${todayStr}。
-請分析使用者的輸入（文字或語音）：
-1. 若內容中含有「提醒、記得、要去、要買、期限、到期、保固、會議、預約、檢查」或待做動作，抽取為 action_items 陣列。
-2. 若內容有提及日期（例如明天、後天、下週三、11/15、週五等），以基準日 ${todayStr} 換算為精確的 YYYY-MM-DD 填入 reminder_date；無提及則填空字串 ""。
-3. category 分類必須為下列其中之一：["財務", "工作", "旅行", "醫療健康", "證件", "家庭生活", "購物", "學習", "未分類"]。
-
-請回傳純 JSON 格式（嚴禁 markdown 代碼標記）：
-{
-  "title": "精簡標題(12字內)",
-  "summary": "一句話重點摘要(35字內)",
-  "tags": ["標籤1", "標籤2"],
-  "category": "選定分類",
-  "action_items": ["待辦事項動作"],
-  "reminder_date": "YYYY-MM-DD 或空字串"
-}`;
-
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 12000);
-
-      try {
-        const res = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          signal: controller.signal,
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: `${systemPrompt}\n\n使用者輸入內容：${rawText}` }] }]
-          })
-        });
-        clearTimeout(timeoutId);
-
-        const data = await res.json();
-        if (data.error) {
-          throw new Error(data.error.message || JSON.stringify(data.error));
-        }
-
-        let textOutput = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!textOutput) throw new Error("API 未回傳有效文字");
-
-        textOutput = textOutput.replace(/```json/gi, '').replace(/```/g, '').trim();
-        return JSON.parse(textOutput);
-      } catch (err) {
-        clearTimeout(timeoutId);
-        if (err.name === 'AbortError') throw new Error("連線超時（超過12秒未回應）");
-        throw err;
-      }
-    }
-
+    // 由後端處理分析，前端直接乾淨送出
     async function submitToGoogleCloud() {
       const input = document.getElementById('modalInput');
       const text = input.value.trim();
@@ -496,50 +434,31 @@
 
       const btn = document.getElementById('modalSubmitBtn');
       btn.disabled = true;
-      btn.innerHTML = '<span>AI 分析中...</span>';
+      btn.innerHTML = '<span>AI 分析並寫入雲端...</span>';
 
       try {
-        let aiResult = {
-          title: text.substring(0, 10) || "隨手記",
-          summary: text.substring(0, 30),
-          tags: ["速記"],
-          category: "未分類",
-          action_items: [],
-          reminder_date: ""
-        };
-
-        if (apiKey && text) {
-          try {
-            aiResult = await extractWithGemini(text, apiKey);
-          } catch (err) {
-            alert("⚠️ Gemini 分析提示：\n" + err.message);
-          }
-        }
-
-        btn.innerHTML = '<span>寫入雲端...</span>';
-
         const payload = {
-          title: aiResult.title || text.substring(0, 10),
-          summary: aiResult.summary || text.substring(0, 30),
-          tags: aiResult.tags || ["速記"],
-          category: aiResult.category || "未分類",
           content: text,
-          action_items: aiResult.action_items || [],
-          reminder_date: aiResult.reminder_date || "",
+          apiKey: apiKey || "",
           fileBase64: modalFileBase64,
           fileName: modalFileName
         };
 
-        await fetch(gasUrl, {
+        const res = await fetch(gasUrl, {
           method: "POST",
           headers: { "Content-Type": "text/plain;charset=utf-8" },
           body: JSON.stringify(payload)
         });
 
+        const json = await res.json();
+        if (json.status === "error") {
+          throw new Error(json.message);
+        }
+
         closeAddModal();
         fetchNotesFromDrive();
       } catch (e) {
-        alert("儲存至雲端失敗：" + e.message);
+        alert("存入失敗：" + e.message);
       } finally {
         btn.disabled = false;
         btn.innerHTML = '<span>AI 分析並存入</span>';

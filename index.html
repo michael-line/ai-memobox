@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>AI 記憶夾</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              DEFAULT: '#388E6C',
+              dark: '#2B6F54',
+              light: '#E8F5E9',
+              accent: '#FDF3E7',
+              borderOrange: '#FCD8B8',
+              orangeText: '#D97736'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      -webkit-tap-highlight-color: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    .pb-safe {
+      padding-bottom: calc(75px + env(safe-area-inset-bottom, 0px));
+    }
+  </style>
+</head>
+<body class="bg-[#F8FAF9] text-slate-800 antialiased min-h-screen">
+
+  <!-- 1. 頂部狀態/導覽列 -->
+  <header class="sticky top-0 z-30 bg-[#F8FAF9]/90 backdrop-blur-md px-5 py-3.5 flex items-center justify-between">
+    <div class="flex items-center space-x-2">
+      <div class="w-8 h-8 rounded-full bg-brand flex items-center justify-center text-white text-base">
+        <i class="fa-solid fa-shapes"></i>
+      </div>
+      <span class="text-xl font-bold tracking-tight text-slate-900">AI 記憶夾</span>
+    </div>
+    <div class="flex items-center space-x-4 text-slate-600 text-lg">
+      <button onclick="toggleConfigModal()" title="設定 API 與雲端" class="hover:text-brand transition">
+        <i class="fa-solid fa-lock"></i>
+      </button>
+      <button onclick="toggleConfigModal()" class="hover:text-brand transition">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- 主內容區 (手機滾動) -->
+  <main class="max-w-md mx-auto px-5 pt-2 pb-safe space-y-5">
+
+    <!-- 2. 個人化問候語 -->
+    <div>
+      <h2 class="text-2xl font-bold text-slate-900 flex items-center gap-1.5">
+        <span id="greetingText">晚安</span>，<span id="userNameDisplay">我的朋友</span>
+      </h2>
+      <p class="text-xs text-slate-500 mt-1">看到有用的東西，先丟進來；之後用一句話找回。</p>
+    </div>
+
+    <!-- 3. AI 自然語言搜尋框 -->
+    <div class="relative bg-white rounded-2xl shadow-sm border border-slate-200/80 p-1.5 flex items-center">
+      <div class="pl-3 pr-2 text-brand text-lg">
+        <i class="fa-solid fa-wand-magic-sparkles"></i>
+      </div>
+      <input type="text" id="aiSearchInput" onkeydown="handleSearchKey(event)" placeholder="問 AI 找資料，例如「東京飯店」" class="w-full text-xs text-slate-700 placeholder-slate-400 bg-transparent outline-none">
+      <button onclick="searchNotes()" class="bg-brand hover:bg-brand-dark text-white rounded-xl w-8 h-8 flex items-center justify-center shrink-0 transition">
+        <i class="fa-solid fa-magnifying-glass text-xs"></i>
+      </button>
+    </div>
+
+    <!-- 4. 主按鈕：添加記憶 -->
+    <button onclick="openAddModal()" class="w-full bg-brand hover:bg-brand-dark active:scale-[0.99] text-white py-3.5 rounded-2xl font-semibold text-base shadow-sm flex items-center justify-center gap-2 transition">
+      <i class="fa-solid fa-plus text-sm"></i>
+      <span>添加記憶</span>
+    </button>
+
+    <!-- 5. 未分類提醒卡片 (淡橘色底) -->
+    <div id="unclassifiedBanner" class="bg-brand-accent border border-brand-borderOrange rounded-2xl p-3.5 flex items-start justify-between gap-2 shadow-xs cursor-pointer" onclick="filterByCategory('未分類')">
+      <div class="flex items-start gap-2.5">
+        <div class="text-brand-orangeText text-lg mt-0.5">
+          <i class="fa-regular fa-folder-open"></i>
+        </div>
+        <div>
+          <h4 class="text-xs font-semibold text-brand-orangeText">
+            有 <span id="unclassifiedCount">0</span> 筆資料還沒分類，點一下就能歸好
+          </h4>
+          <p class="text-[11px] text-brand-orangeText/80 mt-0.5">（你分過的，AI 以後會學著分）</p>
+        </div>
+      </div>
+      <span class="text-xs text-brand-orangeText font-medium whitespace-nowrap mt-0.5 flex items-center gap-1">
+        整理 <i class="fa-solid fa-arrow-right text-[10px]"></i>
+      </span>
+    </div>
+
+    <!-- 6. 常用區 -->
+    <div>
+      <div class="flex items-center justify-between text-xs text-slate-500 mb-2 font-medium">
+        <span class="flex items-center gap-1 text-slate-700"><i class="fa-solid fa-star text-amber-400"></i> 常用</span>
+        <button class="hover:underline flex items-center gap-1 text-[11px]">管理 <i class="fa-solid fa-arrow-right text-[9px]"></i></button>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="filterByCategory('私密資料')" class="bg-white border border-slate-200 px-3 py-1.5 rounded-xl text-xs font-medium text-slate-700 flex items-center gap-1.5 shadow-xs">
+          <i class="fa-solid fa-lock text-purple-600 text-xs"></i>
+          <span>私密資料</span>
+        </button>
+        <button onclick="openAddModal()" class="bg-white/60 border border-dashed border-slate-300 px-3 py-1.5 rounded-xl text-xs text-slate-400 hover:text-slate-600">
+          + 加入
+        </button>
+      </div>
+    </div>
+
+    <!-- 7. 文件分類 (雙欄網格卡片) -->
+    <div>
+      <div class="flex items-center justify-between text-xs text-slate-500 mb-2.5 font-medium">
+        <span class="text-slate-800 font-bold text-sm">文件分類</span>
+        <button onclick="fetchNotesFromDrive()" class="hover:underline flex items-center gap-1 text-[11px]">
+          最近新增 <i class="fa-solid fa-arrow-right text-[9px]"></i>
+        </button>
+      </div>
+
+      <!-- 分類 Grid -->
+      <div class="grid grid-cols-2 gap-2.5" id="categoryGrid">
+        <div onclick="filterByCategory('財務')" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
+          <div class="text-2xl">💰</div>
+          <div>
+            <div class="text-xs font-bold text-slate-800">財務</div>
+            <div class="text-[11px] text-slate-400 font-normal"><span id="count-財務">0</span> 筆</div>
+          </div>
+        </div>
+        <div onclick="filterByCategory('工作')" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
+          <div class="text-2xl">💼</div>
+          <div>
+            <div class="text-xs font-bold text-slate-800">工作</div>
+            <div class="text-[11px] text-slate-400 font-normal"><span id="count-工作">0</span> 筆</div>
+          </div>
+        </div>
+        <div onclick="filterByCategory('旅行')" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
+          <div class="text-2xl">✈️</div>
+          <div>
+            <div class="text-xs font-bold text-slate-800">旅行</div>
+            <div class="text-[11px] text-slate-400 font-normal"><span id="count-旅行">0</span> 筆</div>
+          </div>
+        </div>
+        <div onclick="filterByCategory('醫療健康')" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
+          <div class="text-2xl">🏥</div>
+          <div>
+            <div class="text-xs font-bold text-slate-800">醫療健康</div>
+            <div class="text-[11px] text-slate-400 font-normal"><span id="count-醫療健康">0</span> 筆</div>
+          </div>
+        </div>
+        <div onclick="filterByCategory('證件')" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
+          <div class="text-2xl">🪪</div>
+          <div>
+            <div class="text-xs font-bold text-slate-800">證件</div>
+            <div class="text-[11px] text-slate-400 font-normal"><span id="count-證件">0</span> 筆</div>
+          </div>
+        </div>
+        <div onclick="filterByCategory('家庭生活')" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
+          <div class="text-2xl">🏡</div>
+          <div>
+            <div class="text-xs font-bold text-slate-800">家庭生活</div>
+            <div class="text-[11px] text-slate-400 font-normal"><span id="count-家庭生活">0</span> 筆</div>
+          </div>
+        </div>
+        <div onclick="filterByCategory('購物')" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
+          <div class="text-2xl">🛒</div>
+          <div>
+            <div class="text-xs font-bold text-slate-800">購物</div>
+            <div class="text-[11px] text-slate-400 font-normal"><span id="count-購物">0</span> 筆</div>
+          </div>
+        </div>
+        <div onclick="filterByCategory('學習')" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
+          <div class="text-2xl">📚</div>
+          <div>
+            <div class="text-xs font-bold text-slate-800">學習</div>
+            <div class="text-[11px] text-slate-400 font-normal"><span id="count-學習">0</span> 筆</div>
+          </div>
+        </div>
+        <div onclick="filterByCategory('未分類')" class="bg-[#FFFDFB] p-3.5 rounded-2xl border border-dashed border-brand-borderOrange shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
+          <div class="text-2xl">📂</div>
+          <div>
+            <div class="text-xs font-bold text-brand-orangeText">未分類</div>
+            <div class="text-[11px] text-brand-orangeText/70"><span id="count-未分類">0</span> 筆待整理</div>
+          </div>
+        </div>
+        <div onclick="showAllNotes()" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
+          <div class="text-lg text-slate-500 pl-1">⚙️</div>
+          <div class="text-xs font-bold text-slate-700">檢視全部記憶</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 8. 即將到來 / 提醒事項 -->
+    <div>
+      <div class="flex items-center justify-between text-xs text-slate-500 mb-2 font-medium">
+        <span class="text-slate-800 font-bold text-sm">即將到來</span>
+        <button class="hover:underline flex items-center gap-1 text-[11px]">全部 <i class="fa-solid fa-arrow-right text-[9px]"></i></button>
+      </div>
+      <div id="reminderList" class="space-y-2">
+        <div class="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-xs flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="text-brand-orangeText text-lg"><i class="fa-regular fa-bell"></i></div>
+            <div>
+              <div class="text-xs font-bold text-slate-800" id="latestReminderTitle">尚無即將到期事項</div>
+              <div class="text-[11px] text-slate-400" id="latestReminderSub">AI 會自動從記憶中擷取提醒</div>
+            </div>
+          </div>
+          <span class="bg-orange-50 text-orange-600 text-[10px] px-2 py-0.5 rounded-md font-medium">正常</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 9. 指派給我的任務 (待辦清單) -->
+    <div>
+      <div class="text-slate-800 font-bold text-sm mb-2">指派給我的任務</div>
+      <div id="todoContainer" class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs text-center text-xs text-slate-400">
+        沒有待辦任務 🎉
+      </div>
+    </div>
+
+    <!-- 記憶清單展示區 (點擊分類或全部時顯示) -->
+    <div id="notesSection" class="pt-2">
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="text-xs font-bold text-slate-700" id="currentFilterTitle">最近新增記憶</h3>
+        <button onclick="fetchNotesFromDrive()" class="text-xs text-brand hover:underline">重新整理</button>
+      </div>
+      <div id="cardsWrapper" class="space-y-3"></div>
+    </div>
+
+  </main>
+
+  <!-- 10. 右下角懸浮按鈕：小幫手 -->
+  <button onclick="askAIAssistant()" class="fixed right-4 bottom-20 z-40 bg-brand text-white px-3.5 py-2.5 rounded-full shadow-lg flex items-center gap-1.5 text-xs font-semibold hover:bg-brand-dark active:scale-95 transition">
+    <i class="fa-regular fa-comment-dots text-sm"></i>
+    <span>小幫手</span>
+  </button>
+
+  <!-- 11. 底部導覽列 -->
+  <nav class="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-slate-200 px-6 py-2 flex items-center justify-between z-30 max-w-md mx-auto">
+    <button onclick="showAllNotes()" class="flex flex-col items-center text-brand">
+      <i class="fa-solid fa-house text-lg"></i>
+      <span class="text-[10px] mt-0.5 font-medium">首頁</span>
+    </button>
+    <button onclick="alert('群組共享功能準備中')" class="flex flex-col items-center text-slate-400 hover:text-slate-600">
+      <i class="fa-solid fa-user-group text-lg"></i>
+      <span class="text-[10px] mt-0.5">群組</span>
+    </button>
+    
+    <!-- 中間突出的圓形添加按鈕 -->
+    <button onclick="openAddModal()" class="w-12 h-12 rounded-full bg-brand hover:bg-brand-dark text-white flex items-center justify-center -mt-5 shadow-lg active:scale-95 transition">
+      <i class="fa-solid fa-plus text-xl"></i>
+    </button>
+
+    <button onclick="document.getElementById('aiSearchInput').focus()" class="flex flex-col items-center text-slate-400 hover:text-slate-600">
+      <i class="fa-solid fa-magnifying-glass text-lg"></i>
+      <span class="text-[10px] mt-0.5">AI 搜尋</span>
+    </button>
+    <button onclick="filterByCategory('提醒')" class="flex flex-col items-center text-slate-400 hover:text-slate-600">
+      <i class="fa-regular fa-bell text-lg"></i>
+      <span class="text-[10px] mt-0.5">提醒</span>
+    </button>
+  </nav>
+
+  <!-- 新增記憶彈出視窗 -->
+  <div id="addModal" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-end sm:items-center justify-center hidden">
+    <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-5 space-y-4 shadow-xl">
+      <div class="flex items-center justify-between border-b pb-2">
+        <h3 class="text-sm font-bold text-slate-900">隨手記 / 丟入記憶</h3>
+        <button onclick="closeAddModal()" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
+      </div>
+
+      <textarea id="modalInput" rows="4" placeholder="貼上文字、對話、網址，或按下語音輸入..." class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl p-3 outline-none focus:border-brand"></textarea>
+
+      <!-- 附件展示 -->
+      <div id="modalFilePreview" class="hidden text-xs bg-slate-100 p-2 rounded-lg flex items-center justify-between">
+        <span id="modalFileName" class="truncate"></span>
+        <button onclick="clearModalFile()" class="text-red-500 font-bold ml-2">✕</button>
+      </div>
+
+      <div class="flex items-center justify-between pt-1">
+        <div class="flex items-center space-x-3 text-slate-600">
+          <button id="modalVoiceBtn" onclick="toggleVoiceInputModal()" class="p-2 hover:bg-slate-100 rounded-full text-base">
+            <i class="fa-solid fa-microphone"></i>
+          </button>
+          <label class="p-2 hover:bg-slate-100 rounded-full text-base cursor-pointer">
+            <i class="fa-solid fa-image"></i>
+            <input type="file" id="modalFileInput" accept="image/*" class="hidden" onchange="handleModalFile(event)">
+          </label>
+        </div>
+        <button id="modalSubmitBtn" onclick="submitToGoogleCloud()" class="bg-brand hover:bg-brand-dark text-white px-5 py-2.5 rounded-xl font-medium text-xs shadow-sm flex items-center gap-1.5 transition">
+          <span>AI 分析並存入</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 設定 Modal -->
+  <div id="configModal" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-sm rounded-2xl p-5 space-y-3.5 shadow-xl">
+      <h3 class="text-sm font-bold text-slate-900">設定 Google 雲端與 AI</h3>
+      <div>
+        <label class="block text-[11px] font-semibold text-slate-600 mb-1">你的暱稱</label>
+        <input type="text" id="userNameInput" placeholder="例如：家廣" class="w-full border border-slate-300 rounded-lg p-2 text-xs">
+      </div>
+      <div>
+        <label class="block text-[11px] font-semibold text-slate-600 mb-1">Google Apps Script Web App URL</label>
+        <input type="text" id="cfgGasUrl" placeholder="https://script.google.com/macros/s/.../exec" class="w-full border border-slate-300 rounded-lg p-2 text-xs">
+      </div>
+      <div>
+        <label class="block text-[11px] font-semibold text-slate-600 mb-1">Gemini API Key</label>
+        <input type="password" id="cfgApiKey" placeholder="貼上 AQ.Ab8RN6... 開頭的金鑰" class="w-full border border-slate-300 rounded-lg p-2 text-xs">
+      </div>
+      <div class="flex justify-end space-x-2 pt-2">
+        <button onclick="toggleConfigModal()" class="px-3 py-1.5 text-xs text-slate-600 rounded-lg">取消</button>
+        <button onclick="saveConfigurations()" class="px-3 py-1.5 text-xs bg-brand text-white rounded-lg font-medium">儲存</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let allNotes = [];
+    let modalFileBase64 = null;
+    let modalFileName = "";
+    let isVoiceActive = false;
+    let recognition = null;
+
+    const CATEGORIES = ["財務", "工作", "旅行", "醫療健康", "證件", "家庭生活", "購物", "學習", "未分類"];
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const hour = new Date().getHours();
+      let greeting = "早安";
+      if (hour >= 11 && hour < 14) greeting = "午安";
+      else if (hour >= 14 && hour < 18) greeting = "下午好";
+      else if (hour >= 18 || hour < 5) greeting = "晚安";
+      document.getElementById('greetingText').innerText = greeting;
+
+      const savedName = localStorage.getItem('MEMOBOX_USER_NAME') || '家廣';
+      document.getElementById('userNameDisplay').innerText = savedName;
+      document.getElementById('userNameInput').value = savedName;
+
+      document.getElementById('cfgGasUrl').value = localStorage.getItem('MEMOBOX_GAS_URL') || '';
+      document.getElementById('cfgApiKey').value = localStorage.getItem('MEMOBOX_GEMINI_KEY') || '';
+
+      if (localStorage.getItem('MEMOBOX_GAS_URL')) {
+        fetchNotesFromDrive();
+      } else {
+        toggleConfigModal();
+      }
+    });
+
+    function toggleConfigModal() {
+      document.getElementById('configModal').classList.toggle('hidden');
+    }
+
+    function saveConfigurations() {
+      const name = document.getElementById('userNameInput').value.trim() || '使用者';
+      const gas = document.getElementById('cfgGasUrl').value.trim();
+      const key = document.getElementById('cfgApiKey').value.trim();
+
+      localStorage.setItem('MEMOBOX_USER_NAME', name);
+      localStorage.setItem('MEMOBOX_GAS_URL', gas);
+      localStorage.setItem('MEMOBOX_GEMINI_KEY', key);
+
+      document.getElementById('userNameDisplay').innerText = name;
+      toggleConfigModal();
+      if (gas) fetchNotesFromDrive();
+    }
+
+    function openAddModal() {
+      document.getElementById('addModal').classList.remove('hidden');
+      document.getElementById('modalInput').focus();
+    }
+
+    function closeAddModal() {
+      document.getElementById('addModal').classList.add('hidden');
+      document.getElementById('modalInput').value = "";
+      clearModalFile();
+    }
+
+    function handleModalFile(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      modalFileName = file.name;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        modalFileBase64 = event.target.result;
+        document.getElementById('modalFilePreview').classList.remove('hidden');
+        document.getElementById('modalFileName').innerText = `已附加：${file.name}`;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearModalFile() {
+      modalFileBase64 = null;
+      modalFileName = "";
+      document.getElementById('modalFileInput').value = "";
+      document.getElementById('modalFilePreview').classList.add('hidden');
+    }
+
+    function toggleVoiceInputModal() {
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        alert('此瀏覽器未支援語音辨識');
+        return;
+      }
+      if (isVoiceActive) {
+        recognition.stop();
+        return;
+      }
+
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new SR();
+      recognition.lang = 'zh-TW';
+      recognition.onstart = () => {
+        isVoiceActive = true;
+        document.getElementById('modalVoiceBtn').classList.add('text-red-500', 'animate-pulse');
+      };
+      recognition.onresult = (e) => {
+        const text = e.results[0][0].transcript;
+        const input = document.getElementById('modalInput');
+        input.value = (input.value ? input.value + " " : "") + text;
+      };
+      recognition.onend = () => {
+        isVoiceActive = false;
+        document.getElementById('modalVoiceBtn').classList.remove('text-red-500', 'animate-pulse');
+      };
+      recognition.start();
+    }
+
+    async function extractWithGemini(rawText, apiKey) {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+      const systemPrompt = `你是一個個人第二大腦「AI記憶夾」助手。請分析輸入並分類至以下其中之一：
+["財務", "工作", "旅行", "醫療健康", "證件", "家庭生活", "購物", "學習", "未分類"]。
+請回傳純 JSON 格式：
+{
+  "title": "精簡標題(10字內)",
+  "summary": "一句話重點摘要(30字內)",
+  "tags": ["標籤1", "標籤2"],
+  "category": "選定上述最精準分類，若無法確定則填未分類",
+  "action_items": ["待辦事項，無則空陣列"]
+}`;
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: `${systemPrompt}\n\n內容：${rawText}` }] }],
+          generationConfig: { responseMimeType: "application/json" }
+        })
+      });
+      const data = await res.json();
+      return JSON.parse(data.candidates[0].content.parts[0].text);
+    }
+
+    async function submitToGoogleCloud() {
+      const input = document.getElementById('modalInput');
+      const text = input.value.trim();
+      const gasUrl = localStorage.getItem('MEMOBOX_GAS_URL');
+      const apiKey = localStorage.getItem('MEMOBOX_GEMINI_KEY');
+
+      if (!text && !modalFileBase64) {
+        alert('請輸入筆記或夾帶檔案');
+        return;
+      }
+      if (!gasUrl) {
+        alert('請先在設定中輸入 Google Apps Script 網址');
+        toggleConfigModal();
+        return;
+      }
+
+      const btn = document.getElementById('modalSubmitBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span>處理中...</span>';
+
+      try {
+        let aiResult = {
+          title: text.substring(0, 10) || "隨手記",
+          summary: text.substring(0, 30),
+          tags: ["速記"],
+          category: "未分類",
+          action_items: []
+        };
+
+        if (apiKey && text) {
+          try {
+            aiResult = await extractWithGemini(text, apiKey);
+          } catch (err) {
+            console.warn("Gemini 解析失敗，退回預設：", err);
+          }
+        }
+
+        const payload = {
+          title: aiResult.title,
+          summary: aiResult.summary,
+          tags: aiResult.tags,
+          category: aiResult.category,
+          content: text,
+          action_items: aiResult.action_items,
+          fileBase64: modalFileBase64,
+          fileName: modalFileName
+        };
+
+        await fetch(gasUrl, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload)
+        });
+
+        closeAddModal();
+        fetchNotesFromDrive();
+      } catch (e) {
+        alert("儲存至雲端失敗：" + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span>AI 分析並存入</span>';
+      }
+    }
+
+    async function fetchNotesFromDrive() {
+      const gasUrl = localStorage.getItem('MEMOBOX_GAS_URL');
+      if (!gasUrl) return;
+
+      try {
+        const res = await fetch(gasUrl);
+        const json = await res.json();
+        if (json.status === "success") {
+          allNotes = json.data;
+          updateDashboardCounts();
+          renderNotesList(allNotes);
+        }
+      } catch (err) {
+        console.error("同步失敗：", err);
+      }
+    }
+
+    function updateDashboardCounts() {
+      const counts = {};
+      CATEGORIES.forEach(c => counts[c] = 0);
+      let unclassified = 0;
+      let todos = [];
+
+      allNotes.forEach(item => {
+        const cat = item['分類'] || '未分類';
+        if (counts[cat] !== undefined) counts[cat]++;
+        else counts['未分類']++;
+
+        if (cat === '未分類') unclassified++;
+        if (item['待辦清單']) {
+          todos.push({ title: item['標題'], todo: item['待辦清單'] });
+        }
+      });
+
+      CATEGORIES.forEach(c => {
+        const el = document.getElementById(`count-${c}`);
+        if (el) el.innerText = counts[c] || 0;
+      });
+
+      document.getElementById('unclassifiedCount').innerText = unclassified;
+
+      const todoBox = document.getElementById('todoContainer');
+      if (todos.length > 0) {
+        todoBox.innerHTML = todos.slice(0, 3).map(t => `
+          <div class="text-left py-1 border-b last:border-0 border-slate-100 flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-brand shrink-0"></span>
+            <span class="text-xs text-slate-700 font-medium truncate">${t.title}：${t.todo.replace(/\n/g, ', ')}</span>
+          </div>
+        `).join('');
+      } else {
+        todoBox.innerHTML = '沒有待辦任務 🎉';
+      }
+    }
+
+    function renderNotesList(list) {
+      const wrapper = document.getElementById('cardsWrapper');
+      if (!list || list.length === 0) {
+        wrapper.innerHTML = '<div class="text-center text-xs text-slate-400 py-6">目前此分類尚無資料</div>';
+        return;
+      }
+
+      wrapper.innerHTML = list.map(item => `
+        <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] px-2 py-0.5 rounded-md bg-brand-light text-brand font-medium">${item['分類'] || '備忘'}</span>
+            <span class="text-[10px] text-slate-400">${item['建立時間'] ? item['建立時間'].substring(5, 16) : ''}</span>
+          </div>
+          <h4 class="text-sm font-bold text-slate-800">${item['標題'] || '無標題'}</h4>
+          <p class="text-xs text-slate-600 line-clamp-2">${item['摘要'] || item['原始內容'] || ''}</p>
+          
+          ${item['待辦清單'] ? `
+            <div class="bg-amber-50/70 border border-amber-200/60 rounded-xl p-2 text-[11px] text-amber-800">
+              📌 ${item['待辦清單']}
+            </div>
+          ` : ''}
+
+          ${item['附件連結'] ? `
+            <a href="${item['附件連結']}" target="_blank" class="inline-flex items-center gap-1 text-[11px] text-brand hover:underline">
+              <i class="fa-solid fa-paperclip"></i> 查看雲端硬碟附件
+            </a>
+          ` : ''}
+        </div>
+      `).join('');
+    }
+
+    function filterByCategory(cat) {
+      document.getElementById('currentFilterTitle').innerText = `分類：${cat}`;
+      const filtered = allNotes.filter(n => (n['分類'] || '未分類') === cat);
+      renderNotesList(filtered);
+      window.scrollTo({ top: document.getElementById('notesSection').offsetTop - 60, behavior: 'smooth' });
+    }
+
+    function showAllNotes() {
+      document.getElementById('currentFilterTitle').innerText = "全部記憶卡片";
+      renderNotesList(allNotes);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function handleSearchKey(e) {
+      if (e.key === 'Enter') searchNotes();
+    }
+
+    function searchNotes() {
+      const q = document.getElementById('aiSearchInput').value.trim().toLowerCase();
+      if (!q) {
+        showAllNotes();
+        return;
+      }
+      document.getElementById('currentFilterTitle').innerText = `搜尋結果：「${q}」`;
+      const res = allNotes.filter(n => 
+        (n['標題'] && n['標題'].toLowerCase().includes(q)) ||
+        (n['摘要'] && n['摘要'].toLowerCase().includes(q)) ||
+        (n['標籤'] && n['標籤'].toLowerCase().includes(q)) ||
+        (n['原始內容'] && n['原始內容'].toLowerCase().includes(q))
+      );
+      renderNotesList(res);
+      window.scrollTo({ top: document.getElementById('notesSection').offsetTop - 60, behavior: 'smooth' });
+    }
+
+    function askAIAssistant() {
+      const q = prompt("小幫手：請問你想尋找或整理記憶夾中的什麼內容？");
+      if (!q) return;
+      document.getElementById('aiSearchInput').value = q;
+      searchNotes();
+    }
+  </script>
+</body>
+</html>

@@ -126,7 +126,6 @@
         </button>
       </div>
 
-      <!-- 分類 Grid -->
       <div class="grid grid-cols-2 gap-2.5" id="categoryGrid">
         <div onclick="filterByCategory('財務')" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
           <div class="text-2xl">💰</div>
@@ -202,18 +201,11 @@
     <div>
       <div class="flex items-center justify-between text-xs text-slate-500 mb-2 font-medium">
         <span class="text-slate-800 font-bold text-sm">即將到來</span>
-        <button class="hover:underline flex items-center gap-1 text-[11px]">全部 <i class="fa-solid fa-arrow-right text-[9px]"></i></button>
+        <button onclick="filterByReminders()" class="hover:underline flex items-center gap-1 text-[11px]">全部 <i class="fa-solid fa-arrow-right text-[9px]"></i></button>
       </div>
-      <div id="reminderList" class="space-y-2">
-        <div class="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-xs flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <div class="text-brand-orangeText text-lg"><i class="fa-regular fa-bell"></i></div>
-            <div>
-              <div class="text-xs font-bold text-slate-800" id="latestReminderTitle">尚無即將到期事項</div>
-              <div class="text-[11px] text-slate-400" id="latestReminderSub">AI 會自動從記憶中擷取提醒</div>
-            </div>
-          </div>
-          <span class="bg-orange-50 text-orange-600 text-[10px] px-2 py-0.5 rounded-md font-medium">正常</span>
+      <div id="reminderContainer" class="space-y-2">
+        <div class="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-xs text-center text-xs text-slate-400">
+          尚無提醒事項
         </div>
       </div>
     </div>
@@ -221,12 +213,12 @@
     <!-- 9. 指派給我的任務 (待辦清單) -->
     <div>
       <div class="text-slate-800 font-bold text-sm mb-2">指派給我的任務</div>
-      <div id="todoContainer" class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs text-center text-xs text-slate-400">
+      <div id="todoContainer" class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs space-y-2 text-xs text-slate-400">
         沒有待辦任務 🎉
       </div>
     </div>
 
-    <!-- 記憶清單展示區 (點擊分類或全部時顯示) -->
+    <!-- 記憶清單展示區 -->
     <div id="notesSection" class="pt-2">
       <div class="flex items-center justify-between mb-2">
         <h3 class="text-xs font-bold text-slate-700" id="currentFilterTitle">最近新增記憶</h3>
@@ -249,12 +241,11 @@
       <i class="fa-solid fa-house text-lg"></i>
       <span class="text-[10px] mt-0.5 font-medium">首頁</span>
     </button>
-    <button onclick="alert('群組共享功能準備中')" class="flex flex-col items-center text-slate-400 hover:text-slate-600">
+    <button onclick="alert('群組功能即將推出')" class="flex flex-col items-center text-slate-400 hover:text-slate-600">
       <i class="fa-solid fa-user-group text-lg"></i>
       <span class="text-[10px] mt-0.5">群組</span>
     </button>
     
-    <!-- 中間突出的圓形添加按鈕 -->
     <button onclick="openAddModal()" class="w-12 h-12 rounded-full bg-brand hover:bg-brand-dark text-white flex items-center justify-center -mt-5 shadow-lg active:scale-95 transition">
       <i class="fa-solid fa-plus text-xl"></i>
     </button>
@@ -263,7 +254,7 @@
       <i class="fa-solid fa-magnifying-glass text-lg"></i>
       <span class="text-[10px] mt-0.5">AI 搜尋</span>
     </button>
-    <button onclick="filterByCategory('提醒')" class="flex flex-col items-center text-slate-400 hover:text-slate-600">
+    <button onclick="filterByReminders()" class="flex flex-col items-center text-slate-400 hover:text-slate-600">
       <i class="fa-regular fa-bell text-lg"></i>
       <span class="text-[10px] mt-0.5">提醒</span>
     </button>
@@ -418,6 +409,9 @@
       const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
       recognition = new SR();
       recognition.lang = 'zh-TW';
+      recognition.continuous = false;
+      recognition.interimResults = false;
+
       recognition.onstart = () => {
         isVoiceActive = true;
         document.getElementById('modalVoiceBtn').classList.add('text-red-500', 'animate-pulse');
@@ -434,29 +428,60 @@
       recognition.start();
     }
 
+    // 多重模型備援與完整錯誤提示
     async function extractWithGemini(rawText, apiKey) {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-      const systemPrompt = `你是一個個人第二大腦「AI記憶夾」助手。請分析輸入並分類至以下其中之一：
-["財務", "工作", "旅行", "醫療健康", "證件", "家庭生活", "購物", "學習", "未分類"]。
-請回傳純 JSON 格式：
+      const todayStr = new Date().toISOString().split('T')[0];
+      const systemPrompt = `你是一個個人第二大腦「AI記憶夾」分析助手。今天是 ${todayStr}。
+請分析使用者的輸入（文字或語音）：
+1. 若內容中含有「提醒、記得、要去、要買、期限、到期、保固、會議、預約、檢查」或待做動作，抽取為 action_items 陣列。
+2. 若內容有提及日期（例如明天、後天、下週三、11/15、週五等），以基準日 ${todayStr} 換算為精確的 YYYY-MM-DD 填入 reminder_date；無提及則填空字串 ""。
+3. category 分類必須為下列其中之一：["財務", "工作", "旅行", "醫療健康", "證件", "家庭生活", "購物", "學習", "未分類"]。
+
+請回傳純 JSON 格式（嚴禁 markdown 代碼標記）：
 {
-  "title": "精簡標題(10字內)",
-  "summary": "一句話重點摘要(30字內)",
+  "title": "精簡標題(12字內)",
+  "summary": "一句話重點摘要(35字內)",
   "tags": ["標籤1", "標籤2"],
-  "category": "選定上述最精準分類，若無法確定則填未分類",
-  "action_items": ["待辦事項，無則空陣列"]
+  "category": "選定分類",
+  "action_items": ["待辦事項動作"],
+  "reminder_date": "YYYY-MM-DD 或空字串"
 }`;
 
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: `${systemPrompt}\n\n內容：${rawText}` }] }],
-          generationConfig: { responseMimeType: "application/json" }
-        })
-      });
-      const data = await res.json();
-      return JSON.parse(data.candidates[0].content.parts[0].text);
+      const requestBody = {
+        contents: [{ parts: [{ text: `${systemPrompt}\n\n使用者輸入內容：${rawText}` }] }]
+      };
+
+      // 依序嘗試相容性最高的模型端點
+      const candidateModels = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-2.5-flash"];
+      let lastError = null;
+
+      for (const modelName of candidateModels) {
+        try {
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+          const res = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(requestBody)
+          });
+          const data = await res.json();
+          if (data.error) {
+            throw new Error(`${modelName}: ${data.error.message || JSON.stringify(data.error)}`);
+          }
+
+          let textOutput = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (!textOutput) throw new Error("API 未回傳有效文字");
+
+          // 清除可能殘留的 markdown 標籤
+          textOutput = textOutput.replace(/```json/gi, '').replace(/```/g, '').trim();
+          return JSON.parse(textOutput);
+        } catch (err) {
+          lastError = err;
+          console.warn(`嘗試 ${modelName} 失敗，嘗試下一個：`, err);
+        }
+      }
+
+      // 如果全部都失敗，主動彈出視窗告知使用者真實原因
+      throw lastError;
     }
 
     async function submitToGoogleCloud() {
@@ -466,7 +491,7 @@
       const apiKey = localStorage.getItem('MEMOBOX_GEMINI_KEY');
 
       if (!text && !modalFileBase64) {
-        alert('請輸入筆記或夾帶檔案');
+        alert('請先輸入筆記或夾帶檔案');
         return;
       }
       if (!gasUrl) {
@@ -477,7 +502,7 @@
 
       const btn = document.getElementById('modalSubmitBtn');
       btn.disabled = true;
-      btn.innerHTML = '<span>處理中...</span>';
+      btn.innerHTML = '<span>AI 分析中...</span>';
 
       try {
         let aiResult = {
@@ -485,24 +510,30 @@
           summary: text.substring(0, 30),
           tags: ["速記"],
           category: "未分類",
-          action_items: []
+          action_items: [],
+          reminder_date: ""
         };
 
         if (apiKey && text) {
           try {
             aiResult = await extractWithGemini(text, apiKey);
           } catch (err) {
-            console.warn("Gemini 解析失敗，退回預設：", err);
+            alert("⚠️ Gemini 分析未成功：\n" + err.message + "\n\n將改用基本標題存入雲端。");
           }
+        } else if (!apiKey) {
+          alert("提示：尚未設定 Gemini API Key，將以原始文字直接存入。");
         }
 
+        btn.innerHTML = '<span>寫入雲端...</span>';
+
         const payload = {
-          title: aiResult.title,
-          summary: aiResult.summary,
-          tags: aiResult.tags,
-          category: aiResult.category,
+          title: aiResult.title || text.substring(0, 10),
+          summary: aiResult.summary || text.substring(0, 30),
+          tags: aiResult.tags || ["速記"],
+          category: aiResult.category || "未分類",
           content: text,
-          action_items: aiResult.action_items,
+          action_items: aiResult.action_items || [],
+          reminder_date: aiResult.reminder_date || "",
           fileBase64: modalFileBase64,
           fileName: modalFileName
         };
@@ -532,7 +563,7 @@
         const json = await res.json();
         if (json.status === "success") {
           allNotes = json.data;
-          updateDashboardCounts();
+          updateDashboard();
           renderNotesList(allNotes);
         }
       } catch (err) {
@@ -540,11 +571,13 @@
       }
     }
 
-    function updateDashboardCounts() {
+    function updateDashboard() {
       const counts = {};
       CATEGORIES.forEach(c => counts[c] = 0);
       let unclassified = 0;
       let todos = [];
+      let reminders = [];
+      const todayStr = new Date().toISOString().split('T')[0];
 
       allNotes.forEach(item => {
         const cat = item['分類'] || '未分類';
@@ -552,24 +585,74 @@
         else counts['未分類']++;
 
         if (cat === '未分類') unclassified++;
-        if (item['待辦清單']) {
-          todos.push({ title: item['標題'], todo: item['待辦清單'] });
+
+        // 待辦任務收集
+        if (item['待辦清單'] && item['待辦清單'].toString().trim()) {
+          const lines = item['待辦清單'].toString().split('\n');
+          lines.forEach(l => {
+            if (l.trim()) todos.push({ title: item['標題'], todo: l.trim(), date: item['提醒日期'] });
+          });
+        }
+
+        // 提醒事項收集
+        if (item['提醒日期'] && item['提醒日期'].toString().trim()) {
+          const rDate = item['提醒日期'].toString().trim().substring(0, 10);
+          const isExpired = rDate < todayStr;
+          reminders.push({
+            title: item['標題'],
+            date: rDate,
+            isExpired: isExpired,
+            content: item['摘要'] || item['原始內容']
+          });
         }
       });
 
+      // 1. 更新分類統計卡片數字
       CATEGORIES.forEach(c => {
         const el = document.getElementById(`count-${c}`);
         if (el) el.innerText = counts[c] || 0;
       });
-
       document.getElementById('unclassifiedCount').innerText = unclassified;
 
+      // 2. 渲染「即將到來」提醒卡片
+      const reminderBox = document.getElementById('reminderContainer');
+      if (reminders.length > 0) {
+        reminderBox.innerHTML = reminders.map(r => `
+          <div class="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-xs flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="${r.isExpired ? 'text-red-500' : 'text-brand-orangeText'} text-lg">
+                <i class="fa-regular fa-bell"></i>
+              </div>
+              <div>
+                <div class="text-xs font-bold text-slate-800">${r.title}</div>
+                <div class="text-[11px] text-slate-400">
+                  ${r.date} ${r.isExpired ? '<span class="text-red-500 font-medium">已過期</span>' : '<span class="text-emerald-600 font-medium">預定</span>'}
+                </div>
+              </div>
+            </div>
+            <span class="${r.isExpired ? 'bg-red-50 text-red-600' : 'bg-orange-50 text-orange-600'} text-[10px] px-2 py-0.5 rounded-md font-medium">
+              ${r.isExpired ? '過期' : '重要'}
+            </span>
+          </div>
+        `).join('');
+      } else {
+        reminderBox.innerHTML = `
+          <div class="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-xs text-center text-xs text-slate-400">
+            尚無提醒事項 🎉
+          </div>
+        `;
+      }
+
+      // 3. 渲染「指派給我的任務」待辦卡片
       const todoBox = document.getElementById('todoContainer');
       if (todos.length > 0) {
-        todoBox.innerHTML = todos.slice(0, 3).map(t => `
-          <div class="text-left py-1 border-b last:border-0 border-slate-100 flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-brand shrink-0"></span>
-            <span class="text-xs text-slate-700 font-medium truncate">${t.title}：${t.todo.replace(/\n/g, ', ')}</span>
+        todoBox.innerHTML = todos.map((t, idx) => `
+          <div class="flex items-start gap-2.5 py-1 text-left">
+            <input type="checkbox" id="chk_${idx}" class="mt-0.5 rounded text-brand focus:ring-0">
+            <label for="chk_${idx}" class="text-xs text-slate-700 leading-snug cursor-pointer">
+              <span class="font-semibold text-slate-900">${t.title}：</span>${t.todo}
+              ${t.date ? `<span class="text-[10px] text-slate-400 block mt-0.5"><i class="fa-regular fa-clock"></i> 期限：${t.date}</span>` : ''}
+            </label>
           </div>
         `).join('');
       } else {
@@ -595,7 +678,13 @@
           
           ${item['待辦清單'] ? `
             <div class="bg-amber-50/70 border border-amber-200/60 rounded-xl p-2 text-[11px] text-amber-800">
-              📌 ${item['待辦清單']}
+              📌 <strong>待辦：</strong>\n${item['待辦清單']}
+            </div>
+          ` : ''}
+
+          ${item['提醒日期'] ? `
+            <div class="text-[11px] text-slate-500">
+              ⏰ <strong>提醒日期：</strong>${item['提醒日期']}
             </div>
           ` : ''}
 
@@ -611,6 +700,13 @@
     function filterByCategory(cat) {
       document.getElementById('currentFilterTitle').innerText = `分類：${cat}`;
       const filtered = allNotes.filter(n => (n['分類'] || '未分類') === cat);
+      renderNotesList(filtered);
+      window.scrollTo({ top: document.getElementById('notesSection').offsetTop - 60, behavior: 'smooth' });
+    }
+
+    function filterByReminders() {
+      document.getElementById('currentFilterTitle').innerText = "全部提醒與待辦事項";
+      const filtered = allNotes.filter(n => (n['提醒日期'] && n['提醒日期'].trim()) || (n['待辦清單'] && n['待辦清單'].trim()));
       renderNotesList(filtered);
       window.scrollTo({ top: document.getElementById('notesSection').offsetTop - 60, behavior: 'smooth' });
     }

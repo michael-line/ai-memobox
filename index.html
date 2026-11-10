@@ -66,7 +66,7 @@
       <div class="pl-3 pr-2 text-brand text-lg">
         <i class="fa-solid fa-wand-magic-sparkles"></i>
       </div>
-      <input type="text" id="aiSearchInput" onkeydown="handleSearchKey(event)" placeholder="問 AI 找資料，例如「東京飯店」" class="w-full text-xs text-slate-700 placeholder-slate-400 bg-transparent outline-none">
+      <input type="text" id="aiSearchInput" onkeydown="handleSearchKey(event)" placeholder="問 AI 找資料，例如「車廠保養」" class="w-full text-xs text-slate-700 placeholder-slate-400 bg-transparent outline-none">
       <button onclick="searchNotes()" class="bg-brand hover:bg-brand-dark text-white rounded-xl w-8 h-8 flex items-center justify-center shrink-0 transition">
         <i class="fa-solid fa-magnifying-glass text-xs"></i>
       </button>
@@ -86,7 +86,7 @@
           <h4 class="text-xs font-semibold text-brand-orangeText">
             有 <span id="unclassifiedCount">0</span> 筆資料還沒分類，點一下就能歸好
           </h4>
-          <p class="text-[11px] text-brand-orangeText/80 mt-0.5">（你分過的，AI 以後會學著分）</p>
+          <p class="text-[11px] text-brand-orangeText/80 mt-0.5">（點開卡片即可隨時修改所有內容）</p>
         </div>
       </div>
       <span class="text-xs text-brand-orangeText font-medium whitespace-nowrap mt-0.5 flex items-center gap-1">
@@ -269,7 +269,7 @@
     </div>
   </div>
 
-  <!-- 彈窗 2：AI 分析預覽核對面板（新升級） -->
+  <!-- 彈窗 2：AI 分析預覽核對面板 -->
   <div id="previewModal" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white w-full max-w-md rounded-2xl p-5 space-y-3.5 shadow-2xl max-h-[90vh] overflow-y-auto">
       <div class="flex items-center justify-between border-b pb-2">
@@ -332,76 +332,85 @@
     </div>
   </div>
 
-  <!-- 彈窗 3：記憶卡片詳細資訊與編輯分類 -->
+  <!-- 彈窗 3：記憶詳細資訊與【全欄位手動修改】面板 -->
   <div id="detailModal" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white w-full max-w-md rounded-2xl p-5 space-y-4 shadow-xl max-h-[85vh] overflow-y-auto">
+    <div class="bg-white w-full max-w-md rounded-2xl p-5 space-y-3.5 shadow-xl max-h-[90vh] overflow-y-auto">
       <div class="flex items-center justify-between border-b pb-2">
-        <span id="detailBadge" class="text-xs px-2.5 py-1 rounded-md bg-brand-light text-brand font-medium"></span>
+        <span class="text-xs text-slate-400 font-medium" id="detailModalHeader">記憶詳細內容</span>
         <button onclick="closeDetailModal()" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
       </div>
 
+      <!-- 縮圖預覽 -->
       <div id="detailImageContainer" class="hidden rounded-xl overflow-hidden border border-slate-200">
-        <img id="detailImage" src="" alt="附件圖片" class="w-full max-h-56 object-cover cursor-pointer" onclick="openFullImage()">
+        <img id="detailImage" src="" alt="附件圖片" class="w-full max-h-52 object-cover cursor-pointer" onclick="openFullImage()">
       </div>
 
+      <!-- 標題編輯 -->
       <div>
-        <h3 id="detailTitle" class="text-base font-bold text-slate-900 leading-snug"></h3>
-        <p id="detailTimestamp" class="text-[11px] text-slate-400 mt-1"></p>
+        <label class="block text-[11px] font-bold text-slate-500 mb-1">標題</label>
+        <input type="text" id="editDetailTitle" class="w-full text-sm font-bold bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand">
       </div>
 
-      <div class="bg-slate-50 border border-slate-100 rounded-xl p-3 space-y-1.5">
-        <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">AI 摘要重點</span>
-        <p id="detailSummary" class="text-xs text-slate-700 leading-relaxed"></p>
+      <!-- 分類與提醒日期 -->
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block text-[11px] font-bold text-slate-500 mb-1">分類</label>
+          <select id="editDetailCategory" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand">
+            <option value="財務">💰 財務</option>
+            <option value="工作">💼 工作</option>
+            <option value="旅行">✈️ 旅行</option>
+            <option value="醫療健康">🏥 醫療健康</option>
+            <option value="證件">🪪 證件</option>
+            <option value="家庭生活">🏡 家庭生活</option>
+            <option value="購物">🛒 購物</option>
+            <option value="學習">📚 學習</option>
+            <option value="未分類">📂 未分類</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-500 mb-1">提醒日期</label>
+          <input type="date" id="editDetailReminderDate" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand">
+        </div>
       </div>
 
-      <div id="detailTodoWrapper" class="hidden bg-amber-50 border border-amber-200/70 rounded-xl p-3">
-        <span class="text-[11px] font-bold text-amber-800 block mb-1">📌 待辦清單</span>
-        <div id="detailTodo" class="text-xs text-amber-900 whitespace-pre-line leading-relaxed"></div>
-      </div>
-
-      <div id="detailReminderWrapper" class="hidden flex items-center gap-2 text-xs text-slate-600 bg-slate-50 p-2.5 rounded-xl">
-        <i class="fa-regular fa-bell text-brand-orangeText"></i>
-        <span>提醒日期：<strong id="detailReminderDate" class="text-slate-800"></strong></span>
-      </div>
-
+      <!-- 摘要編輯 -->
       <div>
-        <span class="text-[11px] font-bold text-slate-500 block mb-1">AI 標籤</span>
-        <div id="detailTags" class="flex flex-wrap gap-1.5"></div>
+        <label class="block text-[11px] font-bold text-slate-500 mb-1">AI 重點摘要</label>
+        <textarea id="editDetailSummary" rows="2" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand"></textarea>
       </div>
 
+      <!-- 待辦清單編輯 -->
       <div>
-        <span class="text-[11px] font-bold text-slate-500 block mb-1">原始輸入內容</span>
-        <div id="detailRawContent" class="text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100 whitespace-pre-wrap max-h-36 overflow-y-auto"></div>
+        <label class="block text-[11px] font-bold text-amber-800 mb-1">📌 待辦清單 (每行一項)</label>
+        <textarea id="editDetailTodos" rows="2" placeholder="無待辦事項" class="w-full text-xs bg-amber-50/60 border border-amber-200 rounded-xl p-2.5 outline-none text-amber-900 focus:border-amber-400"></textarea>
       </div>
 
-      <div id="detailAttachmentWrapper" class="hidden">
-        <span class="text-[11px] font-bold text-slate-500 block mb-1">雲端檔案連結</span>
-        <a id="detailAttachmentLink" href="#" target="_blank" class="inline-flex items-center gap-2 text-xs text-brand font-medium hover:underline p-2 bg-emerald-50 rounded-xl w-full">
+      <!-- 標籤編輯 -->
+      <div>
+        <label class="block text-[11px] font-bold text-slate-500 mb-1">標籤 (逗號分隔)</label>
+        <input type="text" id="editDetailTags" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand">
+      </div>
+
+      <!-- 原始內容編輯 -->
+      <div>
+        <label class="block text-[11px] font-bold text-slate-500 mb-1">原始輸入內容</label>
+        <textarea id="editDetailRawContent" rows="3" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand"></textarea>
+      </div>
+
+      <!-- 附件連結 -->
+      <div id="detailAttachmentWrapper" class="hidden pt-1">
+        <a id="detailAttachmentLink" href="#" target="_blank" class="inline-flex items-center gap-2 text-xs text-brand font-medium hover:underline p-2.5 bg-emerald-50 rounded-xl w-full">
           <i class="fa-solid fa-paperclip"></i>
-          <span class="truncate">在 Google Drive 開啟原檔</span>
+          <span class="truncate">在 Google Drive 開啟雲端附件</span>
         </a>
       </div>
 
-      <hr class="border-slate-100">
-
-      <div class="flex items-center justify-between gap-3 pt-1">
-        <label class="text-xs font-semibold text-slate-700 shrink-0">變更分類：</label>
-        <select id="detailCategorySelect" class="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl p-2 outline-none focus:border-brand">
-          <option value="財務">💰 財務</option>
-          <option value="工作">💼 工作</option>
-          <option value="旅行">✈️ 旅行</option>
-          <option value="醫療健康">🏥 醫療健康</option>
-          <option value="證件">🪪 證件</option>
-          <option value="家庭生活">🏡 家庭生活</option>
-          <option value="購物">🛒 購物</option>
-          <option value="學習">📚 學習</option>
-          <option value="未分類">📂 未分類</option>
-        </select>
-        <button id="btnSaveCategory" onclick="updateCurrentNoteCategory()" class="bg-brand text-white text-xs px-3.5 py-2 rounded-xl font-medium shrink-0 hover:bg-brand-dark transition">
-          儲存分類
+      <div class="flex items-center justify-between pt-3 border-t">
+        <span id="detailTimestamp" class="text-[10px] text-slate-400"></span>
+        <button id="btnSaveFullEdit" onclick="saveFullNoteEdit()" class="bg-brand hover:bg-brand-dark text-white text-xs px-5 py-2.5 rounded-xl font-bold shadow-sm transition">
+          儲存所有修改
         </button>
       </div>
-
     </div>
   </div>
 
@@ -551,7 +560,7 @@
       recognition.start();
     }
 
-    // 步驟 1：發送 AI 分析請求並展示核對預覽
+    // 步驟 1：AI 分析預覽
     async function requestAIPreview() {
       const text = document.getElementById('modalInput').value.trim();
       const gasUrl = localStorage.getItem('MEMOBOX_GAS_URL');
@@ -590,7 +599,6 @@
 
         const ai = json.aiResult;
         
-        // 填入預覽核對面板
         document.getElementById('prevTitle').value = ai.title || '';
         document.getElementById('prevCategory').value = ai.category || '未分類';
         document.getElementById('prevReminderDate').value = ai.reminder_date || '';
@@ -598,7 +606,6 @@
         document.getElementById('prevTodos').value = Array.isArray(ai.action_items) ? ai.action_items.join('\n') : (ai.action_items || '');
         document.getElementById('prevTags').value = Array.isArray(ai.tags) ? ai.tags.join(', ') : (ai.tags || '');
 
-        // 關閉輸入彈窗，打開核對預覽彈窗
         document.getElementById('addModal').classList.add('hidden');
         document.getElementById('previewModal').classList.remove('hidden');
 
@@ -615,7 +622,7 @@
       document.getElementById('addModal').classList.remove('hidden');
     }
 
-    // 步驟 2：核對確認後寫入雲端
+    // 步驟 2：初次存入雲端
     async function confirmSaveToCloud() {
       const gasUrl = localStorage.getItem('MEMOBOX_GAS_URL');
       if (!gasUrl) return;
@@ -654,7 +661,6 @@
         const json = await res.json();
         if (json.status === "error") throw new Error(json.message);
 
-        // 成功存入，關閉所有彈窗並清空
         document.getElementById('previewModal').classList.add('hidden');
         document.getElementById('modalInput').value = "";
         clearModalFile();
@@ -802,23 +808,27 @@
 
             <div class="flex items-center justify-between pt-1 text-[11px] text-slate-400">
               <span>${item['提醒日期'] ? `⏰ ${item['提醒日期']}` : ''}</span>
-              <span class="text-brand flex items-center gap-1 text-[11px]">查看詳情 / 整理 <i class="fa-solid fa-chevron-right text-[9px]"></i></span>
+              <span class="text-brand flex items-center gap-1 text-[11px]">查看 / 編輯 <i class="fa-solid fa-chevron-right text-[9px]"></i></span>
             </div>
           </div>
         `;
       }).join('');
     }
 
+    // 點擊卡片開啟詳細修改視窗
     function openDetailModal(index) {
       const item = allNotes[index];
       if (!item) return;
       currentDetailNote = item;
 
-      document.getElementById('detailBadge').innerText = item['分類'] || '未分類';
-      document.getElementById('detailTitle').innerText = item['標題'] || '無標題';
-      document.getElementById('detailTimestamp').innerText = `建立時間：${item['建立時間'] || ''}`;
-      document.getElementById('detailSummary').innerText = item['摘要'] || '無摘要';
-      document.getElementById('detailRawContent').innerText = item['原始內容'] || '';
+      document.getElementById('editDetailTitle').value = item['標題'] || '';
+      document.getElementById('editDetailCategory').value = item['分類'] || '未分類';
+      document.getElementById('editDetailReminderDate').value = item['提醒日期'] ? item['提醒日期'].substring(0, 10) : '';
+      document.getElementById('editDetailSummary').value = item['摘要'] || '';
+      document.getElementById('editDetailTodos').value = item['待辦清單'] || '';
+      document.getElementById('editDetailTags').value = item['標籤'] || '';
+      document.getElementById('editDetailRawContent').value = item['原始內容'] || '';
+      document.getElementById('detailTimestamp').innerText = `建立於：${item['建立時間'] || ''}`;
 
       const thumbUrl = getDriveThumbnailUrl(item['附件連結']);
       const imgContainer = document.getElementById('detailImageContainer');
@@ -830,31 +840,6 @@
         imgContainer.classList.add('hidden');
       }
 
-      const todoWrap = document.getElementById('detailTodoWrapper');
-      if (item['待辦清單'] && item['待辦清單'].trim()) {
-        document.getElementById('detailTodo').innerText = item['待辦清單'];
-        todoWrap.classList.remove('hidden');
-      } else {
-        todoWrap.classList.add('hidden');
-      }
-
-      const remWrap = document.getElementById('detailReminderWrapper');
-      if (item['提醒日期'] && item['提醒日期'].trim()) {
-        document.getElementById('detailReminderDate').innerText = item['提醒日期'];
-        remWrap.classList.remove('hidden');
-      } else {
-        remWrap.classList.add('hidden');
-      }
-
-      const tagsBox = document.getElementById('detailTags');
-      tagsBox.innerHTML = '';
-      if (item['標籤']) {
-        const tagArr = item['標籤'].split(',');
-        tagsBox.innerHTML = tagArr.map(t => `<span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md text-[10px] font-medium">#${t.trim()}</span>`).join('');
-      } else {
-        tagsBox.innerHTML = '<span class="text-slate-400 text-xs">無標籤</span>';
-      }
-
       const attachWrap = document.getElementById('detailAttachmentWrapper');
       if (item['附件連結']) {
         document.getElementById('detailAttachmentLink').href = item['附件連結'];
@@ -863,7 +848,6 @@
         attachWrap.classList.add('hidden');
       }
 
-      document.getElementById('detailCategorySelect').value = item['分類'] || '未分類';
       document.getElementById('detailModal').classList.remove('hidden');
     }
 
@@ -878,21 +862,35 @@
       currentDetailNote = null;
     }
 
-    async function updateCurrentNoteCategory() {
+    // 儲存已建立記憶的所有修改
+    async function saveFullNoteEdit() {
       if (!currentDetailNote || !currentDetailNote['ID']) return;
       const gasUrl = localStorage.getItem('MEMOBOX_GAS_URL');
       if (!gasUrl) return;
 
-      const newCat = document.getElementById('detailCategorySelect').value;
-      const btn = document.getElementById('btnSaveCategory');
+      const title = document.getElementById('editDetailTitle').value.trim();
+      const category = document.getElementById('editDetailCategory').value;
+      const reminderDate = document.getElementById('editDetailReminderDate').value;
+      const summary = document.getElementById('editDetailSummary').value.trim();
+      const todos = document.getElementById('editDetailTodos').value.trim();
+      const tags = document.getElementById('editDetailTags').value.trim();
+      const rawContent = document.getElementById('editDetailRawContent').value.trim();
+
+      const btn = document.getElementById('btnSaveFullEdit');
       btn.disabled = true;
       btn.innerText = '儲存中...';
 
       try {
         const payload = {
-          action: "updateCategory",
+          action: "updateFullNote",
           id: currentDetailNote['ID'],
-          newCategory: newCat
+          title: title,
+          category: category,
+          reminder_date: reminderDate,
+          summary: summary,
+          action_items: todos,
+          tags: tags,
+          content: rawContent
         };
 
         const res = await fetch(gasUrl, {
@@ -903,20 +901,26 @@
         const json = await res.json();
 
         if (json.status === "success") {
-          currentDetailNote['分類'] = newCat;
-          document.getElementById('detailBadge').innerText = newCat;
+          currentDetailNote['標題'] = title;
+          currentDetailNote['分類'] = category;
+          currentDetailNote['提醒日期'] = reminderDate;
+          currentDetailNote['摘要'] = summary;
+          currentDetailNote['待辦清單'] = todos;
+          currentDetailNote['標籤'] = tags;
+          currentDetailNote['原始內容'] = rawContent;
+
           updateDashboard();
           renderNotesList(allNotes);
-          alert('分類已更新成功！');
+          alert('修改儲存成功！');
           closeDetailModal();
         } else {
-          alert('更新失敗，找不到該筆資料');
+          alert('儲存失敗，找不到該筆資料');
         }
       } catch (err) {
         alert('連線失敗：' + err.message);
       } finally {
         btn.disabled = false;
-        btn.innerText = '儲存分類';
+        btn.innerText = '儲存所有修改';
       }
     }
 

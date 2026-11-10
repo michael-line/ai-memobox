@@ -300,7 +300,7 @@
           <!-- 核心優化：移除 capture 強制暫存，啟用系統原生相機選項以存入手機本機相簿 -->
           <label title="開啟相機拍攝" class="p-2 hover:bg-slate-100 rounded-full text-base cursor-pointer text-brand">
             <i class="fa-solid fa-camera"></i>
-            <input type="file" id="modalCameraInput" accept="image/*" class="hidden" onchange="handleModalFile(event)">
+            <input type="file" id="modalCameraInput" accept="image/*" capture="camera" class="hidden" onchange="handleModalFile(event)">
           </label>
 
           <label title="從相簿選取" class="p-2 hover:bg-slate-100 rounded-full text-base cursor-pointer">

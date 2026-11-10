@@ -209,7 +209,6 @@
 
     <!-- 記憶清單展示區 -->
     <div id="notesSection" class="pt-2">
-      <!-- AI 語意解答氣泡 -->
       <div id="aiDirectAnswerWrapper" class="hidden mb-4 bg-emerald-50 border border-emerald-200/80 rounded-2xl p-4 space-y-1 shadow-xs">
         <div class="flex items-center gap-1.5 text-xs font-bold text-brand">
           <i class="fa-solid fa-sparkles"></i>
@@ -425,7 +424,7 @@
         <textarea id="editDetailSummary" rows="2" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand"></textarea>
       </div>
 
-      <!-- 待辦清單與【加入 Google 行事曆 / Tasks】整合區 -->
+      <!-- 待辦清單與整合區 -->
       <div class="space-y-1.5">
         <div class="flex items-center justify-between">
           <label class="text-[11px] font-bold text-amber-800">📌 待辦清單 (每行一項)</label>
@@ -924,6 +923,7 @@
       }
     }
 
+    // 關鍵修復：用 ID 精確綁定卡片點擊，徹底杜絕無法彈窗的問題
     function renderNotesList(list) {
       const wrapper = document.getElementById('cardsWrapper');
       if (!list || list.length === 0) {
@@ -931,10 +931,11 @@
         return;
       }
 
-      wrapper.innerHTML = list.map((item, index) => {
+      wrapper.innerHTML = list.map(item => {
         const media = getMediaInfo(item);
+        const itemId = String(item['ID'] || '');
         return `
-          <div onclick="openDetailModal(${index})" class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs space-y-2 cursor-pointer active:scale-[0.99] hover:border-brand/60 transition">
+          <div onclick="openDetailModalById('${itemId}')" class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs space-y-2 cursor-pointer active:scale-[0.99] hover:border-brand/60 transition">
             
             ${media.thumbUrl ? `
               <div class="w-full h-40 rounded-xl overflow-hidden mb-2 bg-slate-100 relative">
@@ -949,7 +950,7 @@
 
             <div class="flex items-center justify-between">
               <span class="text-[10px] px-2 py-0.5 rounded-md bg-brand-light text-brand font-medium">${item['分類'] || '未分類'}</span>
-              <span class="text-[10px] text-slate-400">${item['建立時間'] ? item['建立時間'].substring(5, 16) : ''}</span>
+              <span class="text-[10px] text-slate-400">${item['建立時間'] ? String(item['建立時間']).substring(5, 16) : ''}</span>
             </div>
             <h4 class="text-sm font-bold text-slate-800">${item['標題'] || '無標題'}</h4>
             <p class="text-xs text-slate-600 line-clamp-2">${item['摘要'] || item['原始內容'] || ''}</p>
@@ -969,14 +970,15 @@
       }).join('');
     }
 
-    function openDetailModal(index) {
-      const item = allNotes[index];
+    // 核心修復：依 ID 精確載入詳情
+    function openDetailModalById(id) {
+      const item = allNotes.find(n => String(n['ID']) === String(id));
       if (!item) return;
       currentDetailNote = item;
 
       document.getElementById('editDetailTitle').value = item['標題'] || '';
       document.getElementById('editDetailCategory').value = item['分類'] || '未分類';
-      document.getElementById('editDetailReminderDate').value = item['提醒日期'] ? item['提醒日期'].substring(0, 10) : '';
+      document.getElementById('editDetailReminderDate').value = item['提醒日期'] ? String(item['提醒日期']).substring(0, 10) : '';
       document.getElementById('editDetailSummary').value = item['摘要'] || '';
       document.getElementById('editDetailTodos').value = item['待辦清單'] || '';
       document.getElementById('editDetailTags').value = item['標籤'] || '';
@@ -1009,7 +1011,7 @@
       }
 
       const attachWrap = document.getElementById('detailAttachmentWrapper');
-      if (item['附件連結']) {
+      if (item['附件連結'] && item['附件連結'].trim()) {
         document.getElementById('detailAttachmentLink').href = item['附件連結'];
         attachWrap.classList.remove('hidden');
       } else {
@@ -1031,7 +1033,7 @@
       currentActiveMediaUrl = "";
     }
 
-    // 刪除此筆記憶功能
+    // 刪除此筆記憶
     async function deleteCurrentNote() {
       if (!currentDetailNote || !currentDetailNote['ID']) return;
       if (!confirm(`確定要刪除這筆記憶嗎？\n「${currentDetailNote['標題']}」`)) return;
@@ -1053,7 +1055,7 @@
         const json = await res.json();
 
         if (json.status === "success") {
-          allNotes = allNotes.filter(n => n['ID'] !== currentDetailNote['ID']);
+          allNotes = allNotes.filter(n => String(n['ID']) !== String(currentDetailNote['ID']));
           updateDashboard();
           renderNotesList(allNotes);
           alert('記憶已刪除成功！');
@@ -1066,7 +1068,7 @@
       }
     }
 
-    // 將待辦事項同步到 Google 日曆
+    // 同步到 Google 日曆
     async function syncCurrentToCalendar() {
       if (!currentDetailNote) return;
       const title = document.getElementById('editDetailTitle').value.trim() || currentDetailNote['標題'];
@@ -1097,19 +1099,18 @@
         if (json.status === "success") {
           alert(`已成功將「${title}」加入您的 Google 行事曆！`);
         } else {
-          alert('同步失敗：' + json.message);
+          alert('同步失敗：' + (json.message || '未知錯誤'));
         }
       } catch (e) {
         alert('加入失敗：' + e.message);
       }
     }
 
-    // 開啟 Google Tasks (工作表) 介面
     function openGoogleTasksWeb() {
       window.open('https://tasks.google.com/', '_blank');
     }
 
-    // 匯出全部記憶為 JSON 檔案
+    // 匯出全部記憶為 JSON
     function exportDataAsJSON() {
       if (!allNotes || allNotes.length === 0) {
         alert('目前無任何記憶資料可匯出！');
@@ -1124,7 +1125,7 @@
       downloadAnchor.remove();
     }
 
-    // 匯出全部記憶為 CSV 表格檔案 (支援 Excel 繁體中文 UTF-8 BOM)
+    // 匯出全部記憶為 CSV (UTF-8 BOM)
     function exportDataAsCSV() {
       if (!allNotes || allNotes.length === 0) {
         alert('目前無任何記憶資料可匯出！');
@@ -1144,6 +1145,7 @@
       link.remove();
     }
 
+    // 儲存修改
     async function saveFullNoteEdit() {
       if (!currentDetailNote || !currentDetailNote['ID']) return;
       const gasUrl = localStorage.getItem('MEMOBOX_GAS_URL');
@@ -1249,8 +1251,8 @@
 
       if (apiKey && allNotes.length > 0) {
         try {
-          const notesContext = allNotes.slice(0, 30).map((n, i) => 
-            `[ID: ${i}] 標題: ${n['標題'] || ''} | 分類: ${n['分類'] || ''} | 摘要: ${n['摘要'] || ''} | 待辦: ${n['待辦清單'] || ''} | 提醒日: ${n['提醒日期'] || ''}`
+          const notesContext = allNotes.slice(0, 30).map(n => 
+            `[ID: ${n['ID']}] 標題: ${n['標題'] || ''} | 分類: ${n['分類'] || ''} | 摘要: ${n['摘要'] || ''} | 待辦: ${n['待辦清單'] || ''} | 提醒日: ${n['提醒日期'] || ''}`
           ).join('\n');
 
           const prompt = `你是一個個人的第二大腦記憶庫管理員。使用者提問：「${q}」。
@@ -1264,7 +1266,7 @@ ${notesContext}
 請務必嚴格回傳純 JSON 格式（嚴禁 markdown 標籤）：
 {
   "answer": "一句話直接回答",
-  "matched_ids": [0, 2]
+  "matched_ids": ["ID字串"]
 }`;
 
           const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`;
@@ -1286,11 +1288,13 @@ ${notesContext}
             }
 
             if (Array.isArray(aiResult.matched_ids) && aiResult.matched_ids.length > 0) {
-              const matchedNotes = aiResult.matched_ids.map(id => allNotes[id]).filter(Boolean);
-              titleEl.innerText = `AI 語意搜尋：「${q}」（找到 ${matchedNotes.length} 筆相關）`;
-              renderNotesList(matchedNotes);
-              window.scrollTo({ top: document.getElementById('notesSection').offsetTop - 60, behavior: 'smooth' });
-              return;
+              const matchedNotes = allNotes.filter(n => aiResult.matched_ids.includes(String(n['ID'])));
+              if (matchedNotes.length > 0) {
+                titleEl.innerText = `AI 語意搜尋：「${q}」（找到 ${matchedNotes.length} 筆相關）`;
+                renderNotesList(matchedNotes);
+                window.scrollTo({ top: document.getElementById('notesSection').offsetTop - 60, behavior: 'smooth' });
+                return;
+              }
             }
           }
         } catch (err) {

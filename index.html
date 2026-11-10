@@ -36,11 +36,15 @@
     html.font-size-md { font-size: 15px; }
     html.font-size-lg { font-size: 17px; }
     html.font-size-xl { font-size: 19px; }
+    .memobox-card {
+      touch-action: manipulation;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body class="bg-[#F8FAF9] text-slate-800 antialiased min-h-screen">
 
-  <header class="sticky top-0 z-30 bg-[#F8FAF9]/90 backdrop-blur-md px-5 py-3.5 flex items-center justify-between">
+  <header class="sticky top-0 z-20 bg-[#F8FAF9]/90 backdrop-blur-md px-5 py-3.5 flex items-center justify-between">
     <div class="flex items-center space-x-2">
       <div class="w-8 h-8 rounded-full bg-brand flex items-center justify-center text-white text-base">
         <i class="fa-solid fa-shapes"></i>
@@ -227,7 +231,7 @@
   </main>
 
   <!-- 底部導覽列 -->
-  <nav class="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-slate-200 px-6 py-2 flex items-center justify-between z-30 max-w-md mx-auto">
+  <nav class="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-slate-200 px-6 py-2 flex items-center justify-between z-20 max-w-md mx-auto">
     <button onclick="showAllNotes()" class="flex flex-col items-center text-brand">
       <i class="fa-solid fa-house text-lg"></i>
       <span class="text-[10px] mt-0.5 font-medium">首頁</span>
@@ -566,7 +570,7 @@
     }
 
     function getMediaInfo(item) {
-      if (item['附件連結'] && item['附件連結'].trim()) {
+      if (item['附件連結'] && String(item['附件連結']).trim()) {
         return {
           thumbUrl: getDriveThumbnailUrl(item['附件連結']),
           openUrl: item['附件連結'],
@@ -847,7 +851,7 @@
       let reminders = [];
       const todayStr = new Date().toISOString().split('T')[0];
 
-      allNotes.forEach(item => {
+      allNotes.forEach((item, idx) => {
         const cat = item['分類'] || '未分類';
         if (counts[cat] !== undefined) counts[cat]++;
         else counts['未分類']++;
@@ -857,7 +861,7 @@
         if (item['待辦清單'] && item['待辦清單'].toString().trim()) {
           const lines = item['待辦清單'].toString().split('\n');
           lines.forEach(l => {
-            if (l.trim()) todos.push({ title: item['標題'], todo: l.trim(), date: item['提醒日期'] });
+            if (l.trim()) todos.push({ id: item['ID'] || idx, title: item['標題'], todo: l.trim(), date: item['提醒日期'] });
           });
         }
 
@@ -865,6 +869,7 @@
           const rDate = item['提醒日期'].toString().trim().substring(0, 10);
           const isExpired = rDate < todayStr;
           reminders.push({
+            id: item['ID'] || idx,
             title: item['標題'],
             date: rDate,
             isExpired: isExpired,
@@ -882,13 +887,13 @@
       const reminderBox = document.getElementById('reminderContainer');
       if (reminders.length > 0) {
         reminderBox.innerHTML = reminders.map(r => `
-          <div class="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-xs flex items-center justify-between">
+          <div onclick="openDetailModalByIndex('${r.id}')" class="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-xs flex items-center justify-between cursor-pointer active:scale-[0.99] transition">
             <div class="flex items-center gap-3">
               <div class="${r.isExpired ? 'text-red-500' : 'text-brand-orangeText'} text-lg">
                 <i class="fa-regular fa-bell"></i>
               </div>
               <div>
-                <div class="text-xs font-bold text-slate-800">${r.title}</div>
+                <div class="text-xs font-bold text-slate-800">${r.title || '無標題'}</div>
                 <div class="text-[11px] text-slate-400">
                   ${r.date} ${r.isExpired ? '<span class="text-red-500 font-medium">已過期</span>' : '<span class="text-emerald-600 font-medium">預定</span>'}
                 </div>
@@ -923,7 +928,7 @@
       }
     }
 
-    // 關鍵修復：用 ID 精確綁定卡片點擊，徹底杜絕無法彈窗的問題
+    // 渲染卡片：加入 data-item-id 屬性並綁定統一事件，防止點擊穿透阻礙
     function renderNotesList(list) {
       const wrapper = document.getElementById('cardsWrapper');
       if (!list || list.length === 0) {
@@ -931,37 +936,37 @@
         return;
       }
 
-      wrapper.innerHTML = list.map(item => {
+      wrapper.innerHTML = list.map((item, index) => {
         const media = getMediaInfo(item);
-        const itemId = String(item['ID'] || '');
+        const itemId = item['ID'] ? String(item['ID']) : String(index);
         return `
-          <div onclick="openDetailModalById('${itemId}')" class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs space-y-2 cursor-pointer active:scale-[0.99] hover:border-brand/60 transition">
+          <div class="memobox-card bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs space-y-2 active:scale-[0.99] hover:border-brand/60 transition" onclick="openDetailModalByIndex('${itemId}')">
             
             ${media.thumbUrl ? `
               <div class="w-full h-40 rounded-xl overflow-hidden mb-2 bg-slate-100 relative">
                 <img src="${media.thumbUrl}" alt="縮圖" class="w-full h-full object-cover" loading="lazy">
                 ${media.type === 'youtube' ? `
-                  <div class="absolute inset-0 bg-black/20 flex items-center justify-center">
+                  <div class="absolute inset-0 bg-black/20 flex items-center justify-center pointer-events-none">
                     <i class="fa-brands fa-youtube text-red-600 bg-white rounded-xl px-2 py-0.5 text-2xl shadow-md"></i>
                   </div>
                 ` : ''}
               </div>
             ` : ''}
 
-            <div class="flex items-center justify-between">
+            <div class="flex items-center justify-between pointer-events-none">
               <span class="text-[10px] px-2 py-0.5 rounded-md bg-brand-light text-brand font-medium">${item['分類'] || '未分類'}</span>
               <span class="text-[10px] text-slate-400">${item['建立時間'] ? String(item['建立時間']).substring(5, 16) : ''}</span>
             </div>
-            <h4 class="text-sm font-bold text-slate-800">${item['標題'] || '無標題'}</h4>
-            <p class="text-xs text-slate-600 line-clamp-2">${item['摘要'] || item['原始內容'] || ''}</p>
+            <h4 class="text-sm font-bold text-slate-800 pointer-events-none">${item['標題'] || '無標題'}</h4>
+            <p class="text-xs text-slate-600 line-clamp-2 pointer-events-none">${item['摘要'] || item['原始內容'] || ''}</p>
             
             ${item['待辦清單'] ? `
-              <div class="bg-amber-50/70 border border-amber-200/60 rounded-xl p-2 text-[11px] text-amber-800">
+              <div class="bg-amber-50/70 border border-amber-200/60 rounded-xl p-2 text-[11px] text-amber-800 pointer-events-none">
                 📌 <strong>待辦：</strong>\n${item['待辦清單']}
               </div>
             ` : ''}
 
-            <div class="flex items-center justify-between pt-1 text-[11px] text-slate-400">
+            <div class="flex items-center justify-between pt-1 text-[11px] text-slate-400 pointer-events-none">
               <span>${item['提醒日期'] ? `⏰ ${item['提醒日期']}` : ''}</span>
               <span class="text-brand flex items-center gap-1 text-[11px]">查看 / 編輯 <i class="fa-solid fa-chevron-right text-[9px]"></i></span>
             </div>
@@ -970,10 +975,19 @@
       }).join('');
     }
 
-    // 核心修復：依 ID 精確載入詳情
-    function openDetailModalById(id) {
-      const item = allNotes.find(n => String(n['ID']) === String(id));
-      if (!item) return;
+    // 核心修復：精確比對 ID 或 索引，徹底保證彈窗開啟
+    function openDetailModalByIndex(identifier) {
+      let item = allNotes.find(n => String(n['ID']) === String(identifier));
+      if (!item) {
+        const num = parseInt(identifier, 10);
+        if (!isNaN(num) && allNotes[num]) {
+          item = allNotes[num];
+        }
+      }
+      if (!item) {
+        alert('找不到此筆資料！');
+        return;
+      }
       currentDetailNote = item;
 
       document.getElementById('editDetailTitle').value = item['標題'] || '';
@@ -1011,13 +1025,14 @@
       }
 
       const attachWrap = document.getElementById('detailAttachmentWrapper');
-      if (item['附件連結'] && item['附件連結'].trim()) {
+      if (item['附件連結'] && String(item['附件連結']).trim()) {
         document.getElementById('detailAttachmentLink').href = item['附件連結'];
         attachWrap.classList.remove('hidden');
       } else {
         attachWrap.classList.add('hidden');
       }
 
+      // 移除隱藏，順利呈現
       document.getElementById('detailModal').classList.remove('hidden');
     }
 
@@ -1218,7 +1233,7 @@
     function filterByReminders() {
       document.getElementById('aiDirectAnswerWrapper').classList.add('hidden');
       document.getElementById('currentFilterTitle').innerText = "全部提醒與待辦事項";
-      const filtered = allNotes.filter(n => (n['提醒日期'] && n['提醒日期'].trim()) || (n['待辦清單'] && n['待辦清單'].trim()));
+      const filtered = allNotes.filter(n => (n['提醒日期'] && String(n['提醒日期']).trim()) || (n['待辦清單'] && String(n['待辦清單']).trim()));
       renderNotesList(filtered);
       window.scrollTo({ top: document.getElementById('notesSection').offsetTop - 60, behavior: 'smooth' });
     }

@@ -209,7 +209,7 @@
 
     <!-- 記憶清單展示區 -->
     <div id="notesSection" class="pt-2">
-      <!-- AI 語意解答氣泡（全新增強） -->
+      <!-- AI 語意解答氣泡 -->
       <div id="aiDirectAnswerWrapper" class="hidden mb-4 bg-emerald-50 border border-emerald-200/80 rounded-2xl p-4 space-y-1 shadow-xs">
         <div class="flex items-center gap-1.5 text-xs font-bold text-brand">
           <i class="fa-solid fa-sparkles"></i>
@@ -271,7 +271,7 @@
       </div>
 
       <div class="text-[11px] text-slate-400">
-        💡 真正的語意檢索：即便字句不同（例如「車子」與「汽車」），Gemini 也會理解並找出精確紀錄與直接回答！
+        💡 真正的語意檢索：即便字句不同，Gemini 也會理解並找出精確紀錄與直接回答！
       </div>
     </div>
   </div>
@@ -297,9 +297,10 @@
             <i class="fa-solid fa-microphone"></i>
           </button>
           
-          <label title="即時拍照" class="p-2 hover:bg-slate-100 rounded-full text-base cursor-pointer text-brand">
+          <!-- 核心優化：移除 capture 強制暫存，啟用系統原生相機選項以存入手機本機相簿 -->
+          <label title="開啟相機拍攝" class="p-2 hover:bg-slate-100 rounded-full text-base cursor-pointer text-brand">
             <i class="fa-solid fa-camera"></i>
-            <input type="file" id="modalCameraInput" accept="image/*" capture="environment" class="hidden" onchange="handleModalFile(event)">
+            <input type="file" id="modalCameraInput" accept="image/*" class="hidden" onchange="handleModalFile(event)">
           </label>
 
           <label title="從相簿選取" class="p-2 hover:bg-slate-100 rounded-full text-base cursor-pointer">
@@ -1087,7 +1088,6 @@
       if (e.key === 'Enter') triggerSmartAISearch();
     }
 
-    // 核心升級：真正的 Gemini AI 語意第二大腦檢索
     async function triggerSmartAISearch(customQuery) {
       const q = (customQuery || document.getElementById('aiSearchInput').value || '').trim();
       if (!q) {
@@ -1103,7 +1103,6 @@
       titleEl.innerText = `AI 正在檢索：「${q}」...`;
       answerWrapper.classList.add('hidden');
 
-      // 若有提供 Gemini API Key，直接呼叫 Gemini 3.1 進行語意分析檢索
       if (apiKey && allNotes.length > 0) {
         try {
           const notesContext = allNotes.slice(0, 30).map((n, i) => 
@@ -1137,13 +1136,11 @@ ${notesContext}
             const clean = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
             const aiResult = JSON.parse(clean);
 
-            // 顯示 AI 的直接回答
             if (aiResult.answer) {
               answerText.innerText = aiResult.answer;
               answerWrapper.classList.remove('hidden');
             }
 
-            // 挑出被 AI 判斷相關的卡片
             if (Array.isArray(aiResult.matched_ids) && aiResult.matched_ids.length > 0) {
               const matchedNotes = aiResult.matched_ids.map(id => allNotes[id]).filter(Boolean);
               titleEl.innerText = `AI 語意搜尋：「${q}」（找到 ${matchedNotes.length} 筆相關）`;
@@ -1157,7 +1154,6 @@ ${notesContext}
         }
       }
 
-      // 降級防呆：多詞模糊比對（避免單字不吻合就完全找不到）
       const tokens = q.toLowerCase().split(/\s+/).filter(Boolean);
       const filtered = allNotes.filter(n => {
         const fullContent = [

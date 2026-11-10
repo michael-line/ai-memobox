@@ -340,9 +340,12 @@
         <button onclick="closeDetailModal()" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
       </div>
 
-      <!-- 縮圖預覽 -->
-      <div id="detailImageContainer" class="hidden rounded-xl overflow-hidden border border-slate-200">
-        <img id="detailImage" src="" alt="附件圖片" class="w-full max-h-52 object-cover cursor-pointer" onclick="openFullImage()">
+      <!-- 縮圖預覽（支援點擊跳轉雲端或 YouTube） -->
+      <div id="detailImageContainer" class="hidden rounded-xl overflow-hidden border border-slate-200 relative group cursor-pointer" onclick="handlePreviewMediaClick()">
+        <img id="detailImage" src="" alt="附件圖片" class="w-full max-h-52 object-cover">
+        <div id="ytPlayIcon" class="hidden absolute inset-0 bg-black/30 flex items-center justify-center text-white text-4xl">
+          <i class="fa-brands fa-youtube text-red-600 bg-white rounded-2xl px-2 py-1 shadow-lg"></i>
+        </div>
       </div>
 
       <!-- 標題編輯 -->
@@ -397,7 +400,15 @@
         <textarea id="editDetailRawContent" rows="3" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand"></textarea>
       </div>
 
-      <!-- 附件連結 -->
+      <!-- YouTube 外部專屬連結按鈕 -->
+      <div id="detailYouTubeWrapper" class="hidden pt-1">
+        <a id="detailYouTubeLink" href="#" target="_blank" class="inline-flex items-center justify-center gap-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 p-2.5 rounded-xl w-full shadow-sm transition">
+          <i class="fa-brands fa-youtube text-base"></i>
+          <span>開啟 YouTube 影片觀看</span>
+        </a>
+      </div>
+
+      <!-- 雲端硬碟檔案連結 -->
       <div id="detailAttachmentWrapper" class="hidden pt-1">
         <a id="detailAttachmentLink" href="#" target="_blank" class="inline-flex items-center gap-2 text-xs text-brand font-medium hover:underline p-2.5 bg-emerald-50 rounded-xl w-full">
           <i class="fa-solid fa-paperclip"></i>
@@ -440,6 +451,7 @@
   <script>
     let allNotes = [];
     let currentDetailNote = null;
+    let currentActiveMediaUrl = ""; // 當前卡片所連結的媒體網址（YouTube 或 Drive）
     let modalFileBase64 = null;
     let modalFileName = "";
     let isVoiceActive = false;
@@ -447,6 +459,7 @@
 
     const CATEGORIES = ["財務", "工作", "旅行", "醫療健康", "證件", "家庭生活", "購物", "學習", "未分類"];
 
+    // 取得 Google Drive 縮圖網址
     function getDriveThumbnailUrl(url) {
       if (!url) return "";
       const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
@@ -454,6 +467,39 @@
         return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w600`;
       }
       return "";
+    }
+
+    // 擷取 YouTube 網址中的影片 ID
+    function extractYouTubeVideoId(text) {
+      if (!text) return null;
+      const regExp = /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/;
+      const match = text.match(regExp);
+      return match ? match[1] : null;
+    }
+
+    // 取得完整的媒體縮圖與點擊跳轉網址（優先順序：雲端附件圖片 > YouTube 封面）
+    function getMediaInfo(item) {
+      // 1. 雲端硬碟檔案
+      if (item['附件連結'] && item['附件連結'].trim()) {
+        return {
+          thumbUrl: getDriveThumbnailUrl(item['附件連結']),
+          openUrl: item['附件連結'],
+          type: 'drive'
+        };
+      }
+      
+      // 2. YouTube 影片
+      const raw = (item['原始內容'] || '') + ' ' + (item['摘要'] || '');
+      const ytId = extractYouTubeVideoId(raw);
+      if (ytId) {
+        return {
+          thumbUrl: `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`,
+          openUrl: `https://www.youtube.com/watch?v=${ytId}`,
+          type: 'youtube'
+        };
+      }
+
+      return { thumbUrl: "", openUrl: "", type: "none" };
     }
 
     window.addEventListener('DOMContentLoaded', () => {
@@ -560,7 +606,6 @@
       recognition.start();
     }
 
-    // 步驟 1：AI 分析預覽
     async function requestAIPreview() {
       const text = document.getElementById('modalInput').value.trim();
       const gasUrl = localStorage.getItem('MEMOBOX_GAS_URL');
@@ -622,7 +667,6 @@
       document.getElementById('addModal').classList.remove('hidden');
     }
 
-    // 步驟 2：初次存入雲端
     async function confirmSaveToCloud() {
       const gasUrl = localStorage.getItem('MEMOBOX_GAS_URL');
       if (!gasUrl) return;
@@ -775,6 +819,7 @@
       }
     }
 
+    // 渲染卡片：支援 YouTube 封面顯示與播放圖示
     function renderNotesList(list) {
       const wrapper = document.getElementById('cardsWrapper');
       if (!list || list.length === 0) {
@@ -783,13 +828,18 @@
       }
 
       wrapper.innerHTML = list.map((item, index) => {
-        const thumbUrl = getDriveThumbnailUrl(item['附件連結']);
+        const media = getMediaInfo(item);
         return `
           <div onclick="openDetailModal(${index})" class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs space-y-2 cursor-pointer active:scale-[0.99] hover:border-brand/60 transition">
             
-            ${thumbUrl ? `
-              <div class="w-full h-36 rounded-xl overflow-hidden mb-2 bg-slate-100">
-                <img src="${thumbUrl}" alt="縮圖" class="w-full h-full object-cover" loading="lazy">
+            ${media.thumbUrl ? `
+              <div class="w-full h-40 rounded-xl overflow-hidden mb-2 bg-slate-100 relative">
+                <img src="${media.thumbUrl}" alt="縮圖" class="w-full h-full object-cover" loading="lazy">
+                ${media.type === 'youtube' ? `
+                  <div class="absolute inset-0 bg-black/20 flex items-center justify-center">
+                    <i class="fa-brands fa-youtube text-red-600 bg-white rounded-xl px-2 py-0.5 text-2xl shadow-md"></i>
+                  </div>
+                ` : ''}
               </div>
             ` : ''}
 
@@ -815,7 +865,7 @@
       }).join('');
     }
 
-    // 點擊卡片開啟詳細修改視窗
+    // 開啟卡片詳情彈窗
     function openDetailModal(index) {
       const item = allNotes[index];
       if (!item) return;
@@ -830,16 +880,33 @@
       document.getElementById('editDetailRawContent').value = item['原始內容'] || '';
       document.getElementById('detailTimestamp').innerText = `建立於：${item['建立時間'] || ''}`;
 
-      const thumbUrl = getDriveThumbnailUrl(item['附件連結']);
+      // 判斷圖片與連結
+      const media = getMediaInfo(item);
+      currentActiveMediaUrl = media.openUrl;
+
       const imgContainer = document.getElementById('detailImageContainer');
       const imgEl = document.getElementById('detailImage');
-      if (thumbUrl) {
-        imgEl.src = thumbUrl;
+      const ytPlayIcon = document.getElementById('ytPlayIcon');
+      const ytWrapper = document.getElementById('detailYouTubeWrapper');
+      const ytLink = document.getElementById('detailYouTubeLink');
+
+      if (media.thumbUrl) {
+        imgEl.src = media.thumbUrl;
         imgContainer.classList.remove('hidden');
+        if (media.type === 'youtube') {
+          ytPlayIcon.classList.remove('hidden');
+          ytLink.href = media.openUrl;
+          ytWrapper.classList.remove('hidden');
+        } else {
+          ytPlayIcon.classList.add('hidden');
+          ytWrapper.classList.add('hidden');
+        }
       } else {
         imgContainer.classList.add('hidden');
+        ytWrapper.classList.add('hidden');
       }
 
+      // 雲端硬碟附件連結
       const attachWrap = document.getElementById('detailAttachmentWrapper');
       if (item['附件連結']) {
         document.getElementById('detailAttachmentLink').href = item['附件連結'];
@@ -851,18 +918,19 @@
       document.getElementById('detailModal').classList.remove('hidden');
     }
 
-    function openFullImage() {
-      if (currentDetailNote && currentDetailNote['附件連結']) {
-        window.open(currentDetailNote['附件連結'], '_blank');
+    // 點擊彈窗內的大圖直接開啟來源（YouTube 或雲端圖檔）
+    function handlePreviewMediaClick() {
+      if (currentActiveMediaUrl) {
+        window.open(currentActiveMediaUrl, '_blank');
       }
     }
 
     function closeDetailModal() {
       document.getElementById('detailModal').classList.add('hidden');
       currentDetailNote = null;
+      currentActiveMediaUrl = "";
     }
 
-    // 儲存已建立記憶的所有修改
     async function saveFullNoteEdit() {
       if (!currentDetailNote || !currentDetailNote['ID']) return;
       const gasUrl = localStorage.getItem('MEMOBOX_GAS_URL');

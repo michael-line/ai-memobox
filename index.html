@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-TW" class="font-size-md">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -28,10 +28,16 @@
     body {
       -webkit-tap-highlight-color: transparent;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      transition: font-size 0.2s ease;
     }
     .pb-safe {
       padding-bottom: calc(75px + env(safe-area-inset-bottom, 0px));
     }
+    /* 字體大小縮放階層支援 */
+    html.font-size-sm { font-size: 14px; }
+    html.font-size-md { font-size: 16px; }
+    html.font-size-lg { font-size: 18px; }
+    html.font-size-xl { font-size: 20px; }
   </style>
 </head>
 <body class="bg-[#F8FAF9] text-slate-800 antialiased min-h-screen">
@@ -43,12 +49,18 @@
       </div>
       <span class="text-xl font-bold tracking-tight text-slate-900">AI 記憶夾</span>
     </div>
-    <div class="flex items-center space-x-4 text-slate-600 text-lg">
-      <button onclick="toggleConfigModal()" title="設定 API 與雲端" class="hover:text-brand transition">
+
+    <!-- 右側功能區：包含快速切換字體大小與設定 -->
+    <div class="flex items-center space-x-3 text-slate-600">
+      <!-- 快速字體縮放切換選單 -->
+      <div class="flex items-center bg-white border border-slate-200/90 rounded-xl px-1.5 py-0.5 shadow-xs">
+        <button onclick="setFontSize('md')" id="btnFontMd" title="標準字體" class="text-xs font-bold px-2 py-1 rounded-lg text-slate-500 hover:text-brand transition">A</button>
+        <button onclick="setFontSize('lg')" id="btnFontLg" title="較大字體" class="text-sm font-bold px-2 py-1 rounded-lg text-slate-500 hover:text-brand transition">A+</button>
+        <button onclick="setFontSize('xl')" id="btnFontXl" title="特大字體" class="text-base font-bold px-2 py-1 rounded-lg text-slate-500 hover:text-brand transition">A++</button>
+      </div>
+
+      <button onclick="toggleConfigModal()" title="設定 API 與雲端" class="hover:text-brand transition text-base">
         <i class="fa-solid fa-lock"></i>
-      </button>
-      <button onclick="toggleConfigModal()" class="hover:text-brand transition">
-        <i class="fa-solid fa-bars"></i>
       </button>
     </div>
   </header>
@@ -340,7 +352,6 @@
         <button onclick="closeDetailModal()" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
       </div>
 
-      <!-- 縮圖預覽（支援點擊跳轉雲端或 YouTube） -->
       <div id="detailImageContainer" class="hidden rounded-xl overflow-hidden border border-slate-200 relative group cursor-pointer" onclick="handlePreviewMediaClick()">
         <img id="detailImage" src="" alt="附件圖片" class="w-full max-h-52 object-cover">
         <div id="ytPlayIcon" class="hidden absolute inset-0 bg-black/30 flex items-center justify-center text-white text-4xl">
@@ -348,13 +359,11 @@
         </div>
       </div>
 
-      <!-- 標題編輯 -->
       <div>
         <label class="block text-[11px] font-bold text-slate-500 mb-1">標題</label>
         <input type="text" id="editDetailTitle" class="w-full text-sm font-bold bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand">
       </div>
 
-      <!-- 分類與提醒日期 -->
       <div class="grid grid-cols-2 gap-2">
         <div>
           <label class="block text-[11px] font-bold text-slate-500 mb-1">分類</label>
@@ -376,31 +385,26 @@
         </div>
       </div>
 
-      <!-- 摘要編輯 -->
       <div>
         <label class="block text-[11px] font-bold text-slate-500 mb-1">AI 重點摘要</label>
         <textarea id="editDetailSummary" rows="2" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand"></textarea>
       </div>
 
-      <!-- 待辦清單編輯 -->
       <div>
         <label class="block text-[11px] font-bold text-amber-800 mb-1">📌 待辦清單 (每行一項)</label>
         <textarea id="editDetailTodos" rows="2" placeholder="無待辦事項" class="w-full text-xs bg-amber-50/60 border border-amber-200 rounded-xl p-2.5 outline-none text-amber-900 focus:border-amber-400"></textarea>
       </div>
 
-      <!-- 標籤編輯 -->
       <div>
         <label class="block text-[11px] font-bold text-slate-500 mb-1">標籤 (逗號分隔)</label>
         <input type="text" id="editDetailTags" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand">
       </div>
 
-      <!-- 原始內容編輯 -->
       <div>
         <label class="block text-[11px] font-bold text-slate-500 mb-1">原始輸入內容</label>
         <textarea id="editDetailRawContent" rows="3" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand"></textarea>
       </div>
 
-      <!-- YouTube 外部專屬連結按鈕 -->
       <div id="detailYouTubeWrapper" class="hidden pt-1">
         <a id="detailYouTubeLink" href="#" target="_blank" class="inline-flex items-center justify-center gap-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 p-2.5 rounded-xl w-full shadow-sm transition">
           <i class="fa-brands fa-youtube text-base"></i>
@@ -408,7 +412,6 @@
         </a>
       </div>
 
-      <!-- 雲端硬碟檔案連結 -->
       <div id="detailAttachmentWrapper" class="hidden pt-1">
         <a id="detailAttachmentLink" href="#" target="_blank" class="inline-flex items-center gap-2 text-xs text-brand font-medium hover:underline p-2.5 bg-emerald-50 rounded-xl w-full">
           <i class="fa-solid fa-paperclip"></i>
@@ -425,10 +428,18 @@
     </div>
   </div>
 
-  <!-- 彈窗 4：設定彈窗 -->
+  <!-- 彈窗 4：設定彈窗（包含暱稱、金鑰與字體大小切換設定） -->
   <div id="configModal" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white w-full max-w-sm rounded-2xl p-5 space-y-3.5 shadow-xl">
-      <h3 class="text-sm font-bold text-slate-900">設定 Google 雲端與 AI</h3>
+      <h3 class="text-sm font-bold text-slate-900">設定 Google 雲端與介面</h3>
+      <div>
+        <label class="block text-[11px] font-semibold text-slate-600 mb-1">字體大小調整</label>
+        <div class="grid grid-cols-3 gap-2">
+          <button type="button" onclick="setFontSize('md')" class="border border-slate-300 rounded-lg p-2 text-xs font-semibold hover:border-brand">標準 (A)</button>
+          <button type="button" onclick="setFontSize('lg')" class="border border-slate-300 rounded-lg p-2 text-sm font-bold hover:border-brand">大 (A+)</button>
+          <button type="button" onclick="setFontSize('xl')" class="border border-slate-300 rounded-lg p-2 text-base font-bold hover:border-brand">特大 (A++)</button>
+        </div>
+      </div>
       <div>
         <label class="block text-[11px] font-semibold text-slate-600 mb-1">你的暱稱</label>
         <input type="text" id="userNameInput" placeholder="例如：家廣" class="w-full border border-slate-300 rounded-lg p-2 text-xs">
@@ -451,7 +462,7 @@
   <script>
     let allNotes = [];
     let currentDetailNote = null;
-    let currentActiveMediaUrl = ""; // 當前卡片所連結的媒體網址（YouTube 或 Drive）
+    let currentActiveMediaUrl = "";
     let modalFileBase64 = null;
     let modalFileName = "";
     let isVoiceActive = false;
@@ -459,7 +470,28 @@
 
     const CATEGORIES = ["財務", "工作", "旅行", "醫療健康", "證件", "家庭生活", "購物", "學習", "未分類"];
 
-    // 取得 Google Drive 縮圖網址
+    // 字體大小控制邏輯
+    function setFontSize(size) {
+      const htmlEl = document.documentElement;
+      htmlEl.classList.remove('font-size-md', 'font-size-lg', 'font-size-xl');
+      htmlEl.classList.add(`font-size-${size}`);
+      localStorage.setItem('MEMOBOX_FONT_SIZE', size);
+      updateFontSizeButtonStyles(size);
+    }
+
+    function updateFontSizeButtonStyles(activeSize) {
+      ['md', 'lg', 'xl'].forEach(sz => {
+        const btn = document.getElementById(`btnFont${sz.charAt(0).toUpperCase() + sz.slice(1)}`);
+        if (btn) {
+          if (sz === activeSize) {
+            btn.className = "text-xs font-bold px-2 py-1 rounded-lg bg-brand text-white shadow-xs transition";
+          } else {
+            btn.className = "text-xs font-bold px-2 py-1 rounded-lg text-slate-500 hover:text-brand transition";
+          }
+        }
+      });
+    }
+
     function getDriveThumbnailUrl(url) {
       if (!url) return "";
       const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
@@ -469,7 +501,6 @@
       return "";
     }
 
-    // 擷取 YouTube 網址中的影片 ID
     function extractYouTubeVideoId(text) {
       if (!text) return null;
       const regExp = /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/;
@@ -477,9 +508,7 @@
       return match ? match[1] : null;
     }
 
-    // 取得完整的媒體縮圖與點擊跳轉網址（優先順序：雲端附件圖片 > YouTube 封面）
     function getMediaInfo(item) {
-      // 1. 雲端硬碟檔案
       if (item['附件連結'] && item['附件連結'].trim()) {
         return {
           thumbUrl: getDriveThumbnailUrl(item['附件連結']),
@@ -487,8 +516,6 @@
           type: 'drive'
         };
       }
-      
-      // 2. YouTube 影片
       const raw = (item['原始內容'] || '') + ' ' + (item['摘要'] || '');
       const ytId = extractYouTubeVideoId(raw);
       if (ytId) {
@@ -498,11 +525,14 @@
           type: 'youtube'
         };
       }
-
       return { thumbUrl: "", openUrl: "", type: "none" };
     }
 
     window.addEventListener('DOMContentLoaded', () => {
+      // 載入已儲存的字體大小偏好（預設為 lg 大字體以利閱讀）
+      const savedFontSize = localStorage.getItem('MEMOBOX_FONT_SIZE') || 'lg';
+      setFontSize(savedFontSize);
+
       const hour = new Date().getHours();
       let greeting = "早安";
       if (hour >= 11 && hour < 14) greeting = "午安";
@@ -819,7 +849,6 @@
       }
     }
 
-    // 渲染卡片：支援 YouTube 封面顯示與播放圖示
     function renderNotesList(list) {
       const wrapper = document.getElementById('cardsWrapper');
       if (!list || list.length === 0) {
@@ -865,7 +894,6 @@
       }).join('');
     }
 
-    // 開啟卡片詳情彈窗
     function openDetailModal(index) {
       const item = allNotes[index];
       if (!item) return;
@@ -880,7 +908,6 @@
       document.getElementById('editDetailRawContent').value = item['原始內容'] || '';
       document.getElementById('detailTimestamp').innerText = `建立於：${item['建立時間'] || ''}`;
 
-      // 判斷圖片與連結
       const media = getMediaInfo(item);
       currentActiveMediaUrl = media.openUrl;
 
@@ -906,7 +933,6 @@
         ytWrapper.classList.add('hidden');
       }
 
-      // 雲端硬碟附件連結
       const attachWrap = document.getElementById('detailAttachmentWrapper');
       if (item['附件連結']) {
         document.getElementById('detailAttachmentLink').href = item['附件連結'];
@@ -918,7 +944,6 @@
       document.getElementById('detailModal').classList.remove('hidden');
     }
 
-    // 點擊彈窗內的大圖直接開啟來源（YouTube 或雲端圖檔）
     function handlePreviewMediaClick() {
       if (currentActiveMediaUrl) {
         window.open(currentActiveMediaUrl, '_blank');

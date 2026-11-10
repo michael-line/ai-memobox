@@ -26,7 +26,7 @@
   </script>
   <style>
     body {
-      -webkit-tap-highlight-color: rgba(0,0,0,0.05);
+      -webkit-tap-highlight-color: transparent;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       transition: font-size 0.2s ease;
     }
@@ -37,9 +37,8 @@
     html.font-size-lg { font-size: 17px; }
     html.font-size-xl { font-size: 19px; }
     
-    /* 確保所有彈窗浮在最高層 */
-    .modal-backdrop {
-      z-index: 9999 !important;
+    .modal-layer {
+      z-index: 99999 !important;
     }
   </style>
 </head>
@@ -225,14 +224,13 @@
         <button onclick="fetchNotesFromDrive()" class="text-xs text-brand hover:underline">重新整理</button>
       </div>
 
-      <!-- 卡片列表容器 -->
       <div id="cardsWrapper" class="space-y-3"></div>
     </div>
 
   </main>
 
   <!-- 底部導覽列 -->
-  <nav class="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-slate-200 px-6 py-2 flex items-center justify-between z-30 max-w-md mx-auto">
+  <nav class="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-slate-200 px-6 py-2 flex items-center justify-between z-20 max-w-md mx-auto">
     <button onclick="showAllNotes()" class="flex flex-col items-center text-brand">
       <i class="fa-solid fa-house text-lg"></i>
       <span class="text-[10px] mt-0.5 font-medium">首頁</span>
@@ -257,7 +255,7 @@
   </nav>
 
   <!-- 彈窗：AI 搜尋 -->
-  <div id="searchModal" class="modal-backdrop fixed inset-0 bg-black/60 backdrop-blur-xs flex items-start justify-center p-4 pt-16 hidden">
+  <div id="searchModal" class="modal-layer fixed inset-0 bg-black/60 backdrop-blur-xs flex items-start justify-center p-4 pt-16 hidden">
     <div class="bg-white w-full max-w-md rounded-2xl p-5 space-y-4 shadow-xl">
       <div class="flex items-center justify-between border-b pb-2">
         <div class="flex items-center gap-2 text-brand font-bold text-sm">
@@ -273,15 +271,11 @@
           <i class="fa-solid fa-magnifying-glass text-xs"></i>
         </button>
       </div>
-
-      <div class="text-[11px] text-slate-400">
-        💡 真正的語意檢索：即便字句不同，Gemini 也會理解並找出精確紀錄與直接回答！
-      </div>
     </div>
   </div>
 
   <!-- 彈窗 1：新增記憶輸入框 -->
-  <div id="addModal" class="modal-backdrop fixed inset-0 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center hidden">
+  <div id="addModal" class="modal-layer fixed inset-0 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center hidden">
     <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-5 space-y-4 shadow-xl">
       <div class="flex items-center justify-between border-b pb-2">
         <h3 class="text-sm font-bold text-slate-900">隨手記 / 丟入記憶</h3>
@@ -321,7 +315,7 @@
   </div>
 
   <!-- 彈窗 2：AI 分析預覽核對面板 -->
-  <div id="previewModal" class="modal-backdrop fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+  <div id="previewModal" class="modal-layer fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
     <div class="bg-white w-full max-w-md rounded-2xl p-5 space-y-3.5 shadow-2xl max-h-[90vh] overflow-y-auto">
       <div class="flex items-center justify-between border-b pb-2">
         <div class="flex items-center gap-1.5 text-brand font-bold text-sm">
@@ -384,7 +378,7 @@
   </div>
 
   <!-- 彈窗 3：記憶詳細資訊（含刪除、整合行事曆/工作表） -->
-  <div id="detailModal" class="modal-backdrop fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+  <div id="detailModal" class="modal-layer fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
     <div class="bg-white w-full max-w-md rounded-2xl p-5 space-y-3.5 shadow-2xl max-h-[90vh] overflow-y-auto">
       <div class="flex items-center justify-between border-b pb-2">
         <span class="text-xs text-slate-400 font-medium" id="detailModalHeader">記憶詳細內容</span>
@@ -482,7 +476,7 @@
   </div>
 
   <!-- 彈窗 4：設定與資料備份彈窗 -->
-  <div id="configModal" class="modal-backdrop fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+  <div id="configModal" class="modal-layer fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
     <div class="bg-white w-full max-w-sm rounded-2xl p-5 space-y-4 shadow-xl max-h-[90vh] overflow-y-auto">
       <div class="flex items-center justify-between border-b pb-2">
         <h3 class="text-sm font-bold text-slate-900">設定與資料管理</h3>
@@ -530,6 +524,7 @@
     let modalFileName = "";
     let isVoiceActive = false;
     let recognition = null;
+    let currentDisplayList = [];
 
     const CATEGORIES = ["財務", "工作", "旅行", "醫療健康", "證件", "家庭生活", "購物", "學習", "未分類"];
 
@@ -862,7 +857,7 @@
         if (item['待辦清單'] && item['待辦清單'].toString().trim()) {
           const lines = item['待辦清單'].toString().split('\n');
           lines.forEach(l => {
-            if (l.trim()) todos.push({ idx: idx, title: item['標題'], todo: l.trim(), date: item['提醒日期'] });
+            if (l.trim()) todos.push({ noteId: item['ID'], title: item['標題'], todo: l.trim(), date: item['提醒日期'] });
           });
         }
 
@@ -870,11 +865,10 @@
           const rDate = item['提醒日期'].toString().trim().substring(0, 10);
           const isExpired = rDate < todayStr;
           reminders.push({
-            idx: idx,
+            noteId: item['ID'],
             title: item['標題'],
             date: rDate,
-            isExpired: isExpired,
-            content: item['摘要'] || item['原始內容']
+            isExpired: isExpired
           });
         }
       });
@@ -888,7 +882,7 @@
       const reminderBox = document.getElementById('reminderContainer');
       if (reminders.length > 0) {
         reminderBox.innerHTML = reminders.map(r => `
-          <div onclick="openDetailByIndex(${r.idx})" class="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-xs flex items-center justify-between cursor-pointer active:scale-[0.99] transition">
+          <div onclick="openDetailById('${r.noteId}')" class="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-xs flex items-center justify-between cursor-pointer active:scale-[0.99] transition">
             <div class="flex items-center gap-3">
               <div class="${r.isExpired ? 'text-red-500' : 'text-brand-orangeText'} text-lg">
                 <i class="fa-regular fa-bell"></i>
@@ -929,12 +923,11 @@
       }
     }
 
-    // 核心渲染修復：直接將全域陣列的實際項目存入自訂對象，使用最純粹的實時 DOM 點擊監聽
-    let currentRenderedList = [];
+    // 核心渲染修復：直接用 JS createElement + addEventListener 綁定點擊，保證無任何字串問題
     function renderNotesList(list) {
       const wrapper = document.getElementById('cardsWrapper');
       wrapper.innerHTML = '';
-      currentRenderedList = list || [];
+      currentDisplayList = list || [];
 
       if (!list || list.length === 0) {
         wrapper.innerHTML = '<div class="text-center text-xs text-slate-400 py-6">目前沒有找到符合條件的記憶資料</div>';
@@ -944,13 +937,17 @@
       list.forEach((item, index) => {
         const media = getMediaInfo(item);
         const card = document.createElement('div');
-        card.className = "bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs space-y-2 active:scale-[0.98] hover:border-brand/60 transition cursor-pointer select-none";
-        card.onclick = () => openDetailByIndex(index);
+        card.className = "bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs space-y-2 active:scale-[0.98] hover:border-brand/60 transition cursor-pointer";
+        
+        // 直接掛載點擊函數
+        card.addEventListener('click', function() {
+          openDetailById(item['ID'] || index);
+        });
 
         let imgHtml = '';
         if (media.thumbUrl) {
           imgHtml = `
-            <div class="w-full h-40 rounded-xl overflow-hidden mb-2 bg-slate-100 relative pointer-events-none">
+            <div class="w-full h-40 rounded-xl overflow-hidden mb-2 bg-slate-100 relative">
               <img src="${media.thumbUrl}" alt="縮圖" class="w-full h-full object-cover" loading="lazy">
               ${media.type === 'youtube' ? `
                 <div class="absolute inset-0 bg-black/20 flex items-center justify-center">
@@ -964,7 +961,7 @@
         let todoHtml = '';
         if (item['待辦清單']) {
           todoHtml = `
-            <div class="bg-amber-50/70 border border-amber-200/60 rounded-xl p-2 text-[11px] text-amber-800 pointer-events-none">
+            <div class="bg-amber-50/70 border border-amber-200/60 rounded-xl p-2 text-[11px] text-amber-800">
               📌 <strong>待辦：</strong>\n${item['待辦清單']}
             </div>
           `;
@@ -972,14 +969,14 @@
 
         card.innerHTML = `
           ${imgHtml}
-          <div class="flex items-center justify-between pointer-events-none">
+          <div class="flex items-center justify-between">
             <span class="text-[10px] px-2 py-0.5 rounded-md bg-brand-light text-brand font-medium">${item['分類'] || '未分類'}</span>
             <span class="text-[10px] text-slate-400">${item['建立時間'] ? String(item['建立時間']).substring(5, 16) : ''}</span>
           </div>
-          <h4 class="text-sm font-bold text-slate-800 pointer-events-none">${item['標題'] || '無標題'}</h4>
-          <p class="text-xs text-slate-600 line-clamp-2 pointer-events-none">${item['摘要'] || item['原始內容'] || ''}</p>
+          <h4 class="text-sm font-bold text-slate-800">${item['標題'] || '無標題'}</h4>
+          <p class="text-xs text-slate-600 line-clamp-2">${item['摘要'] || item['原始內容'] || ''}</p>
           ${todoHtml}
-          <div class="flex items-center justify-between pt-1 text-[11px] text-slate-400 pointer-events-none">
+          <div class="flex items-center justify-between pt-1 text-[11px] text-slate-400">
             <span>${item['提醒日期'] ? `⏰ ${item['提醒日期']}` : ''}</span>
             <span class="text-brand flex items-center gap-1 text-[11px]">查看 / 編輯 <i class="fa-solid fa-chevron-right text-[9px]"></i></span>
           </div>
@@ -989,58 +986,68 @@
       });
     }
 
-    // 打開詳細視窗
-    function openDetailByIndex(idx) {
-      const item = currentRenderedList[idx] || allNotes[idx];
-      if (!item) return;
+    // 核心彈窗開啟函數（加強防呆）
+    window.openDetailById = function(identifier) {
+      let item = allNotes.find(n => String(n['ID']) === String(identifier));
+      if (!item) {
+        const idx = parseInt(identifier, 10);
+        if (!isNaN(idx) && allNotes[idx]) item = allNotes[idx];
+      }
+      if (!item) {
+        alert('無法讀取此筆資料內容');
+        return;
+      }
       currentDetailNote = item;
 
-      document.getElementById('editDetailTitle').value = item['標題'] || '';
-      document.getElementById('editDetailCategory').value = item['分類'] || '未分類';
-      document.getElementById('editDetailReminderDate').value = item['提醒日期'] ? String(item['提醒日期']).substring(0, 10) : '';
-      document.getElementById('editDetailSummary').value = item['摘要'] || '';
-      document.getElementById('editDetailTodos').value = item['待辦清單'] || '';
-      document.getElementById('editDetailTags').value = item['標籤'] || '';
-      document.getElementById('editDetailRawContent').value = item['原始內容'] || '';
-      document.getElementById('detailTimestamp').innerText = `建立於：${item['建立時間'] || ''}`;
+      try {
+        document.getElementById('editDetailTitle').value = item['標題'] || '';
+        document.getElementById('editDetailCategory').value = item['分類'] || '未分類';
+        document.getElementById('editDetailReminderDate').value = item['提醒日期'] ? String(item['提醒日期']).substring(0, 10) : '';
+        document.getElementById('editDetailSummary').value = item['摘要'] || '';
+        document.getElementById('editDetailTodos').value = item['待辦清單'] || '';
+        document.getElementById('editDetailTags').value = item['標籤'] || '';
+        document.getElementById('editDetailRawContent').value = item['原始內容'] || '';
+        document.getElementById('detailTimestamp').innerText = `建立於：${item['建立時間'] || ''}`;
 
-      const media = getMediaInfo(item);
-      currentActiveMediaUrl = media.openUrl;
+        const media = getMediaInfo(item);
+        currentActiveMediaUrl = media.openUrl;
 
-      const imgContainer = document.getElementById('detailImageContainer');
-      const imgEl = document.getElementById('detailImage');
-      const ytPlayIcon = document.getElementById('ytPlayIcon');
-      const ytWrapper = document.getElementById('detailYouTubeWrapper');
-      const ytLink = document.getElementById('detailYouTubeLink');
+        const imgContainer = document.getElementById('detailImageContainer');
+        const imgEl = document.getElementById('detailImage');
+        const ytPlayIcon = document.getElementById('ytPlayIcon');
+        const ytWrapper = document.getElementById('detailYouTubeWrapper');
+        const ytLink = document.getElementById('detailYouTubeLink');
 
-      if (media.thumbUrl) {
-        imgEl.src = media.thumbUrl;
-        imgContainer.classList.remove('hidden');
-        if (media.type === 'youtube') {
-          ytPlayIcon.classList.remove('hidden');
-          ytLink.href = media.openUrl;
-          ytWrapper.classList.remove('hidden');
+        if (media.thumbUrl) {
+          imgEl.src = media.thumbUrl;
+          imgContainer.classList.remove('hidden');
+          if (media.type === 'youtube') {
+            ytPlayIcon.classList.remove('hidden');
+            ytLink.href = media.openUrl;
+            ytWrapper.classList.remove('hidden');
+          } else {
+            ytPlayIcon.classList.add('hidden');
+            ytWrapper.classList.add('hidden');
+          }
         } else {
-          ytPlayIcon.classList.add('hidden');
+          imgContainer.classList.add('hidden');
           ytWrapper.classList.add('hidden');
         }
-      } else {
-        imgContainer.classList.add('hidden');
-        ytWrapper.classList.add('hidden');
-      }
 
-      const attachWrap = document.getElementById('detailAttachmentWrapper');
-      if (item['附件連結'] && String(item['附件連結']).trim()) {
-        document.getElementById('detailAttachmentLink').href = item['附件連結'];
-        attachWrap.classList.remove('hidden');
-      } else {
-        attachWrap.classList.add('hidden');
-      }
+        const attachWrap = document.getElementById('detailAttachmentWrapper');
+        if (item['附件連結'] && String(item['附件連結']).trim()) {
+          document.getElementById('detailAttachmentLink').href = item['附件連結'];
+          attachWrap.classList.remove('hidden');
+        } else {
+          attachWrap.classList.add('hidden');
+        }
 
-      // 順利開啟彈窗
-      const modal = document.getElementById('detailModal');
-      modal.classList.remove('hidden');
-    }
+        // 開啟彈窗
+        document.getElementById('detailModal').classList.remove('hidden');
+      } catch (err) {
+        alert('開啟彈窗出錯：' + err.message);
+      }
+    };
 
     function handlePreviewMediaClick() {
       if (currentActiveMediaUrl) {

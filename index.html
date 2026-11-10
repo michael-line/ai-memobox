@@ -463,6 +463,9 @@
         </a>
       </div>
 
+      <!-- 建立時間補齊 -->
+      <div id="detailTimestamp" class="text-[11px] text-slate-400"></div>
+
       <!-- 底部操作區：刪除與儲存 -->
       <div class="flex items-center justify-between pt-3 border-t gap-2">
         <button onclick="deleteCurrentNote()" class="text-xs text-red-500 hover:bg-red-50 px-3 py-2 rounded-xl font-bold flex items-center gap-1 transition">
@@ -923,7 +926,6 @@
       }
     }
 
-    // 核心渲染修復：直接用 JS createElement + addEventListener 綁定點擊，保證無任何字串問題
     function renderNotesList(list) {
       const wrapper = document.getElementById('cardsWrapper');
       wrapper.innerHTML = '';
@@ -937,9 +939,8 @@
       list.forEach((item, index) => {
         const media = getMediaInfo(item);
         const card = document.createElement('div');
-        card.className = "bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs space-y-2 active:scale-[0.98] hover:border-brand/60 transition cursor-pointer";
+        card.className = "bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs space-y-2 active:scale-[0.98] hover:border-brand/60 transition cursor-pointer select-none";
         
-        // 直接掛載點擊函數
         card.addEventListener('click', function() {
           openDetailById(item['ID'] || index);
         });
@@ -947,7 +948,7 @@
         let imgHtml = '';
         if (media.thumbUrl) {
           imgHtml = `
-            <div class="w-full h-40 rounded-xl overflow-hidden mb-2 bg-slate-100 relative">
+            <div class="w-full h-40 rounded-xl overflow-hidden mb-2 bg-slate-100 relative pointer-events-none">
               <img src="${media.thumbUrl}" alt="縮圖" class="w-full h-full object-cover" loading="lazy">
               ${media.type === 'youtube' ? `
                 <div class="absolute inset-0 bg-black/20 flex items-center justify-center">
@@ -961,7 +962,7 @@
         let todoHtml = '';
         if (item['待辦清單']) {
           todoHtml = `
-            <div class="bg-amber-50/70 border border-amber-200/60 rounded-xl p-2 text-[11px] text-amber-800">
+            <div class="bg-amber-50/70 border border-amber-200/60 rounded-xl p-2 text-[11px] text-amber-800 pointer-events-none">
               📌 <strong>待辦：</strong>\n${item['待辦清單']}
             </div>
           `;
@@ -969,14 +970,14 @@
 
         card.innerHTML = `
           ${imgHtml}
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between pointer-events-none">
             <span class="text-[10px] px-2 py-0.5 rounded-md bg-brand-light text-brand font-medium">${item['分類'] || '未分類'}</span>
             <span class="text-[10px] text-slate-400">${item['建立時間'] ? String(item['建立時間']).substring(5, 16) : ''}</span>
           </div>
-          <h4 class="text-sm font-bold text-slate-800">${item['標題'] || '無標題'}</h4>
-          <p class="text-xs text-slate-600 line-clamp-2">${item['摘要'] || item['原始內容'] || ''}</p>
+          <h4 class="text-sm font-bold text-slate-800 pointer-events-none">${item['標題'] || '無標題'}</h4>
+          <p class="text-xs text-slate-600 line-clamp-2 pointer-events-none">${item['摘要'] || item['原始內容'] || ''}</p>
           ${todoHtml}
-          <div class="flex items-center justify-between pt-1 text-[11px] text-slate-400">
+          <div class="flex items-center justify-between pt-1 text-[11px] text-slate-400 pointer-events-none">
             <span>${item['提醒日期'] ? `⏰ ${item['提醒日期']}` : ''}</span>
             <span class="text-brand flex items-center gap-1 text-[11px]">查看 / 編輯 <i class="fa-solid fa-chevron-right text-[9px]"></i></span>
           </div>
@@ -986,7 +987,7 @@
       });
     }
 
-    // 核心彈窗開啟函數（加強防呆）
+    // 徹底修復：每個 DOM 賦值都加上防呆檢查，保證 100% 正常開窗
     window.openDetailById = function(identifier) {
       let item = allNotes.find(n => String(n['ID']) === String(identifier));
       if (!item) {
@@ -1000,14 +1001,23 @@
       currentDetailNote = item;
 
       try {
-        document.getElementById('editDetailTitle').value = item['標題'] || '';
-        document.getElementById('editDetailCategory').value = item['分類'] || '未分類';
-        document.getElementById('editDetailReminderDate').value = item['提醒日期'] ? String(item['提醒日期']).substring(0, 10) : '';
-        document.getElementById('editDetailSummary').value = item['摘要'] || '';
-        document.getElementById('editDetailTodos').value = item['待辦清單'] || '';
-        document.getElementById('editDetailTags').value = item['標籤'] || '';
-        document.getElementById('editDetailRawContent').value = item['原始內容'] || '';
-        document.getElementById('detailTimestamp').innerText = `建立於：${item['建立時間'] || ''}`;
+        const setVal = (id, val) => {
+          const el = document.getElementById(id);
+          if (el) el.value = val;
+        };
+        const setText = (id, val) => {
+          const el = document.getElementById(id);
+          if (el) el.innerText = val;
+        };
+
+        setVal('editDetailTitle', item['標題'] || '');
+        setVal('editDetailCategory', item['分類'] || '未分類');
+        setVal('editDetailReminderDate', item['提醒日期'] ? String(item['提醒日期']).substring(0, 10) : '');
+        setVal('editDetailSummary', item['摘要'] || '');
+        setVal('editDetailTodos', item['待辦清單'] || '');
+        setVal('editDetailTags', item['標籤'] || '');
+        setVal('editDetailRawContent', item['原始內容'] || '');
+        setText('detailTimestamp', `建立於：${item['建立時間'] || ''}`);
 
         const media = getMediaInfo(item);
         currentActiveMediaUrl = media.openUrl;
@@ -1019,31 +1029,33 @@
         const ytLink = document.getElementById('detailYouTubeLink');
 
         if (media.thumbUrl) {
-          imgEl.src = media.thumbUrl;
-          imgContainer.classList.remove('hidden');
+          if (imgEl) imgEl.src = media.thumbUrl;
+          if (imgContainer) imgContainer.classList.remove('hidden');
           if (media.type === 'youtube') {
-            ytPlayIcon.classList.remove('hidden');
-            ytLink.href = media.openUrl;
-            ytWrapper.classList.remove('hidden');
+            if (ytPlayIcon) ytPlayIcon.classList.remove('hidden');
+            if (ytLink) ytLink.href = media.openUrl;
+            if (ytWrapper) ytWrapper.classList.remove('hidden');
           } else {
-            ytPlayIcon.classList.add('hidden');
-            ytWrapper.classList.add('hidden');
+            if (ytPlayIcon) ytPlayIcon.classList.add('hidden');
+            if (ytWrapper) ytWrapper.classList.add('hidden');
           }
         } else {
-          imgContainer.classList.add('hidden');
-          ytWrapper.classList.add('hidden');
+          if (imgContainer) imgContainer.classList.add('hidden');
+          if (ytWrapper) ytWrapper.classList.add('hidden');
         }
 
         const attachWrap = document.getElementById('detailAttachmentWrapper');
+        const attachLink = document.getElementById('detailAttachmentLink');
         if (item['附件連結'] && String(item['附件連結']).trim()) {
-          document.getElementById('detailAttachmentLink').href = item['附件連結'];
-          attachWrap.classList.remove('hidden');
+          if (attachLink) attachLink.href = item['附件連結'];
+          if (attachWrap) attachWrap.classList.remove('hidden');
         } else {
-          attachWrap.classList.add('hidden');
+          if (attachWrap) attachWrap.classList.add('hidden');
         }
 
         // 開啟彈窗
-        document.getElementById('detailModal').classList.remove('hidden');
+        const modal = document.getElementById('detailModal');
+        if (modal) modal.classList.remove('hidden');
       } catch (err) {
         alert('開啟彈窗出錯：' + err.message);
       }

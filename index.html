@@ -48,16 +48,16 @@
       <span class="text-xl font-bold tracking-tight text-slate-900">AI 記憶夾</span>
     </div>
 
-    <!-- 字體大小與設定 -->
-    <div class="flex items-center space-x-3 text-slate-600">
+    <!-- 字體大小、備份與設定 -->
+    <div class="flex items-center space-x-2 text-slate-600">
       <div class="flex items-center bg-white border border-slate-200/90 rounded-xl px-1.5 py-0.5 shadow-xs">
         <button onclick="setFontSize('md')" id="btnFontMd" title="標準字體" class="text-xs font-bold px-2 py-1 rounded-lg text-slate-500 hover:text-brand transition">A</button>
         <button onclick="setFontSize('lg')" id="btnFontLg" title="大字體" class="text-sm font-bold px-2 py-1 rounded-lg text-slate-500 hover:text-brand transition">A+</button>
         <button onclick="setFontSize('xl')" id="btnFontXl" title="特大字體" class="text-base font-bold px-2 py-1 rounded-lg text-slate-500 hover:text-brand transition">A++</button>
       </div>
 
-      <button onclick="toggleConfigModal()" title="設定 API 與雲端" class="hover:text-brand transition text-base">
-        <i class="fa-solid fa-lock"></i>
+      <button onclick="toggleConfigModal()" title="設定與資料備份" class="hover:text-brand transition text-base p-1.5">
+        <i class="fa-solid fa-gear"></i>
       </button>
     </div>
   </header>
@@ -297,7 +297,6 @@
             <i class="fa-solid fa-microphone"></i>
           </button>
           
-          <!-- 核心優化：移除 capture 強制暫存，啟用系統原生相機選項以存入手機本機相簿 -->
           <label title="開啟相機拍攝" class="p-2 hover:bg-slate-100 rounded-full text-base cursor-pointer text-brand">
             <i class="fa-solid fa-camera"></i>
             <input type="file" id="modalCameraInput" accept="image/*" capture="camera" class="hidden" onchange="handleModalFile(event)">
@@ -380,7 +379,7 @@
     </div>
   </div>
 
-  <!-- 彈窗 3：記憶詳細資訊與全欄位手動修改面板 -->
+  <!-- 彈窗 3：記憶詳細資訊（含刪除、整合行事曆/工作表） -->
   <div id="detailModal" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white w-full max-w-md rounded-2xl p-5 space-y-3.5 shadow-xl max-h-[90vh] overflow-y-auto">
       <div class="flex items-center justify-between border-b pb-2">
@@ -426,8 +425,19 @@
         <textarea id="editDetailSummary" rows="2" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand"></textarea>
       </div>
 
-      <div>
-        <label class="block text-[11px] font-bold text-amber-800 mb-1">📌 待辦清單 (每行一項)</label>
+      <!-- 待辦清單與【加入 Google 行事曆 / Tasks】整合區 -->
+      <div class="space-y-1.5">
+        <div class="flex items-center justify-between">
+          <label class="text-[11px] font-bold text-amber-800">📌 待辦清單 (每行一項)</label>
+          <div class="flex items-center gap-1.5">
+            <button onclick="syncCurrentToCalendar()" title="加入 Google 日曆" class="text-[10px] text-blue-600 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-md font-semibold flex items-center gap-1">
+              <i class="fa-regular fa-calendar-plus"></i> 加到日曆
+            </button>
+            <button onclick="openGoogleTasksWeb()" title="在 Google 工作表開啟" class="text-[10px] text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded-md font-semibold flex items-center gap-1">
+              <i class="fa-solid fa-list-check"></i> Google 工作
+            </button>
+          </div>
+        </div>
         <textarea id="editDetailTodos" rows="2" placeholder="無待辦事項" class="w-full text-xs bg-amber-50/60 border border-amber-200 rounded-xl p-2.5 outline-none text-amber-900 focus:border-amber-400"></textarea>
       </div>
 
@@ -455,8 +465,11 @@
         </a>
       </div>
 
-      <div class="flex items-center justify-between pt-3 border-t">
-        <span id="detailTimestamp" class="text-[10px] text-slate-400"></span>
+      <!-- 底部操作區：刪除與儲存 -->
+      <div class="flex items-center justify-between pt-3 border-t gap-2">
+        <button onclick="deleteCurrentNote()" class="text-xs text-red-500 hover:bg-red-50 px-3 py-2 rounded-xl font-bold flex items-center gap-1 transition">
+          <i class="fa-regular fa-trash-can"></i> 刪除此筆
+        </button>
         <button id="btnSaveFullEdit" onclick="saveFullNoteEdit()" class="bg-brand hover:bg-brand-dark text-white text-xs px-5 py-2.5 rounded-xl font-bold shadow-sm transition">
           儲存所有修改
         </button>
@@ -464,10 +477,27 @@
     </div>
   </div>
 
-  <!-- 彈窗 4：設定彈窗 -->
+  <!-- 彈窗 4：設定與資料備份彈窗 -->
   <div id="configModal" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white w-full max-w-sm rounded-2xl p-5 space-y-3.5 shadow-xl">
-      <h3 class="text-sm font-bold text-slate-900">設定 Google 雲端與介面</h3>
+    <div class="bg-white w-full max-w-sm rounded-2xl p-5 space-y-4 shadow-xl max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b pb-2">
+        <h3 class="text-sm font-bold text-slate-900">設定與資料管理</h3>
+        <button onclick="toggleConfigModal()" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
+      </div>
+
+      <!-- 資料匯出備份區 -->
+      <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
+        <span class="text-[11px] font-bold text-slate-600 block">📥 資料匯出備份</span>
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="exportDataAsJSON()" class="bg-white border border-slate-300 text-slate-700 py-2 rounded-lg text-xs font-semibold hover:border-brand flex items-center justify-center gap-1">
+            <i class="fa-solid fa-file-code text-amber-500"></i> 匯出 JSON
+          </button>
+          <button onclick="exportDataAsCSV()" class="bg-white border border-slate-300 text-slate-700 py-2 rounded-lg text-xs font-semibold hover:border-brand flex items-center justify-center gap-1">
+            <i class="fa-solid fa-file-csv text-emerald-600"></i> 匯出 CSV 表格
+          </button>
+        </div>
+      </div>
+
       <div>
         <label class="block text-[11px] font-semibold text-slate-600 mb-1">你的暱稱</label>
         <input type="text" id="userNameInput" placeholder="例如：家廣" class="w-full border border-slate-300 rounded-lg p-2 text-xs">
@@ -480,9 +510,10 @@
         <label class="block text-[11px] font-semibold text-slate-600 mb-1">Gemini API Key</label>
         <input type="password" id="cfgApiKey" placeholder="貼上 AQ.Ab8RN6... 開頭的金鑰" class="w-full border border-slate-300 rounded-lg p-2 text-xs">
       </div>
-      <div class="flex justify-end space-x-2 pt-2">
+
+      <div class="flex justify-end space-x-2 pt-2 border-t">
         <button onclick="toggleConfigModal()" class="px-3 py-1.5 text-xs text-slate-600 rounded-lg">取消</button>
-        <button onclick="saveConfigurations()" class="px-3 py-1.5 text-xs bg-brand text-white rounded-lg font-medium">儲存</button>
+        <button onclick="saveConfigurations()" class="px-3 py-1.5 text-xs bg-brand text-white rounded-lg font-medium">儲存設定</button>
       </div>
     </div>
   </div>
@@ -998,6 +1029,119 @@
       document.getElementById('detailModal').classList.add('hidden');
       currentDetailNote = null;
       currentActiveMediaUrl = "";
+    }
+
+    // 刪除此筆記憶功能
+    async function deleteCurrentNote() {
+      if (!currentDetailNote || !currentDetailNote['ID']) return;
+      if (!confirm(`確定要刪除這筆記憶嗎？\n「${currentDetailNote['標題']}」`)) return;
+
+      const gasUrl = localStorage.getItem('MEMOBOX_GAS_URL');
+      if (!gasUrl) return;
+
+      try {
+        const payload = {
+          action: "deleteNote",
+          id: currentDetailNote['ID']
+        };
+
+        const res = await fetch(gasUrl, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload)
+        });
+        const json = await res.json();
+
+        if (json.status === "success") {
+          allNotes = allNotes.filter(n => n['ID'] !== currentDetailNote['ID']);
+          updateDashboard();
+          renderNotesList(allNotes);
+          alert('記憶已刪除成功！');
+          closeDetailModal();
+        } else {
+          alert('刪除失敗，找不到該筆資料');
+        }
+      } catch (err) {
+        alert('連線失敗：' + err.message);
+      }
+    }
+
+    // 將待辦事項同步到 Google 日曆
+    async function syncCurrentToCalendar() {
+      if (!currentDetailNote) return;
+      const title = document.getElementById('editDetailTitle').value.trim() || currentDetailNote['標題'];
+      const todos = document.getElementById('editDetailTodos').value.trim() || currentDetailNote['待辦清單'];
+      const rDate = document.getElementById('editDetailReminderDate').value || currentDetailNote['提醒日期'];
+      const summary = document.getElementById('editDetailSummary').value.trim() || currentDetailNote['摘要'];
+
+      const gasUrl = localStorage.getItem('MEMOBOX_GAS_URL');
+      if (!gasUrl) return;
+
+      const descText = `【AI記憶夾待辦】\n${todos ? todos : '無特別待辦'}\n\n重點摘要：\n${summary}`;
+
+      try {
+        const payload = {
+          action: "syncToCalendar",
+          title: title,
+          description: descText,
+          date: rDate
+        };
+
+        const res = await fetch(gasUrl, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload)
+        });
+        const json = await res.json();
+
+        if (json.status === "success") {
+          alert(`已成功將「${title}」加入您的 Google 行事曆！`);
+        } else {
+          alert('同步失敗：' + json.message);
+        }
+      } catch (e) {
+        alert('加入失敗：' + e.message);
+      }
+    }
+
+    // 開啟 Google Tasks (工作表) 介面
+    function openGoogleTasksWeb() {
+      window.open('https://tasks.google.com/', '_blank');
+    }
+
+    // 匯出全部記憶為 JSON 檔案
+    function exportDataAsJSON() {
+      if (!allNotes || allNotes.length === 0) {
+        alert('目前無任何記憶資料可匯出！');
+        return;
+      }
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(allNotes, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `MemoBox_Backup_${new Date().toISOString().substring(0, 10)}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    // 匯出全部記憶為 CSV 表格檔案 (支援 Excel 繁體中文 UTF-8 BOM)
+    function exportDataAsCSV() {
+      if (!allNotes || allNotes.length === 0) {
+        alert('目前無任何記憶資料可匯出！');
+        return;
+      }
+      const headers = ["ID", "建立時間", "標題", "摘要", "標籤", "分類", "原始內容", "待辦清單", "附件連結", "提醒日期"];
+      const rows = allNotes.map(n => headers.map(h => `"${(n[h] || '').toString().replace(/"/g, '""')}"`).join(","));
+      const csvContent = "\uFEFF" + [headers.join(","), ...rows].join("\r\n");
+
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `MemoBox_Export_${new Date().toISOString().substring(0, 10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
     }
 
     async function saveFullNoteEdit() {

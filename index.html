@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-TW" class="font-size-md">
+<html lang="zh-TW" class="font-size-lg">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -33,11 +33,9 @@
     .pb-safe {
       padding-bottom: calc(75px + env(safe-area-inset-bottom, 0px));
     }
-    /* 字體大小縮放階層支援 */
-    html.font-size-sm { font-size: 14px; }
-    html.font-size-md { font-size: 16px; }
-    html.font-size-lg { font-size: 18px; }
-    html.font-size-xl { font-size: 20px; }
+    html.font-size-md { font-size: 15px; }
+    html.font-size-lg { font-size: 17px; }
+    html.font-size-xl { font-size: 19px; }
   </style>
 </head>
 <body class="bg-[#F8FAF9] text-slate-800 antialiased min-h-screen">
@@ -50,12 +48,11 @@
       <span class="text-xl font-bold tracking-tight text-slate-900">AI 記憶夾</span>
     </div>
 
-    <!-- 右側功能區：包含快速切換字體大小與設定 -->
+    <!-- 字體大小與設定 -->
     <div class="flex items-center space-x-3 text-slate-600">
-      <!-- 快速字體縮放切換選單 -->
       <div class="flex items-center bg-white border border-slate-200/90 rounded-xl px-1.5 py-0.5 shadow-xs">
         <button onclick="setFontSize('md')" id="btnFontMd" title="標準字體" class="text-xs font-bold px-2 py-1 rounded-lg text-slate-500 hover:text-brand transition">A</button>
-        <button onclick="setFontSize('lg')" id="btnFontLg" title="較大字體" class="text-sm font-bold px-2 py-1 rounded-lg text-slate-500 hover:text-brand transition">A+</button>
+        <button onclick="setFontSize('lg')" id="btnFontLg" title="大字體" class="text-sm font-bold px-2 py-1 rounded-lg text-slate-500 hover:text-brand transition">A+</button>
         <button onclick="setFontSize('xl')" id="btnFontXl" title="特大字體" class="text-base font-bold px-2 py-1 rounded-lg text-slate-500 hover:text-brand transition">A++</button>
       </div>
 
@@ -74,21 +71,24 @@
       <p class="text-xs text-slate-500 mt-1">看到有用的東西，先丟進來；之後用一句話找回。</p>
     </div>
 
+    <!-- 頂部快速搜尋列 -->
     <div class="relative bg-white rounded-2xl shadow-sm border border-slate-200/80 p-1.5 flex items-center">
       <div class="pl-3 pr-2 text-brand text-lg">
         <i class="fa-solid fa-wand-magic-sparkles"></i>
       </div>
-      <input type="text" id="aiSearchInput" onkeydown="handleSearchKey(event)" placeholder="問 AI 找資料，例如「車廠保養」" class="w-full text-xs text-slate-700 placeholder-slate-400 bg-transparent outline-none">
+      <input type="text" id="aiSearchInput" onkeydown="handleSearchKey(event)" placeholder="輸入關鍵字或按右邊按鈕..." class="w-full text-xs text-slate-700 placeholder-slate-400 bg-transparent outline-none">
       <button onclick="searchNotes()" class="bg-brand hover:bg-brand-dark text-white rounded-xl w-8 h-8 flex items-center justify-center shrink-0 transition">
         <i class="fa-solid fa-magnifying-glass text-xs"></i>
       </button>
     </div>
 
+    <!-- 添加記憶大按鈕 -->
     <button onclick="openAddModal()" class="w-full bg-brand hover:bg-brand-dark active:scale-[0.99] text-white py-3.5 rounded-2xl font-semibold text-base shadow-sm flex items-center justify-center gap-2 transition">
       <i class="fa-solid fa-plus text-sm"></i>
       <span>添加記憶</span>
     </button>
 
+    <!-- 未分類提醒橫幅 -->
     <div id="unclassifiedBanner" class="bg-brand-accent border border-brand-borderOrange rounded-2xl p-3.5 flex items-start justify-between gap-2 shadow-xs cursor-pointer" onclick="filterByCategory('未分類')">
       <div class="flex items-start gap-2.5">
         <div class="text-brand-orangeText text-lg mt-0.5">
@@ -106,6 +106,7 @@
       </span>
     </div>
 
+    <!-- 文件分類網格 -->
     <div>
       <div class="flex items-center justify-between text-xs text-slate-500 mb-2.5 font-medium">
         <span class="text-slate-800 font-bold text-sm">文件分類</span>
@@ -217,6 +218,7 @@
 
   </main>
 
+  <!-- 底部導覽列 -->
   <nav class="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-slate-200 px-6 py-2 flex items-center justify-between z-30 max-w-md mx-auto">
     <button onclick="showAllNotes()" class="flex flex-col items-center text-brand">
       <i class="fa-solid fa-house text-lg"></i>
@@ -231,8 +233,9 @@
       <i class="fa-solid fa-plus text-xl"></i>
     </button>
 
-    <button onclick="document.getElementById('aiSearchInput').focus()" class="flex flex-col items-center text-slate-400 hover:text-slate-600">
-      <i class="fa-solid fa-magnifying-glass text-lg"></i>
+    <!-- 修正：點擊改為打開乾淨的專用 AI 搜尋彈窗 -->
+    <button onclick="openSearchModal()" class="flex flex-col items-center text-slate-400 hover:text-slate-600">
+      <i class="fa-solid fa-wand-magic-sparkles text-lg"></i>
       <span class="text-[10px] mt-0.5">AI 搜尋</span>
     </button>
     <button onclick="filterByReminders()" class="flex flex-col items-center text-slate-400 hover:text-slate-600">
@@ -240,6 +243,30 @@
       <span class="text-[10px] mt-0.5">提醒</span>
     </button>
   </nav>
+
+  <!-- 專屬 AI 搜尋彈窗 (避免觸發系統網址提示) -->
+  <div id="searchModal" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-start justify-center p-4 pt-16 hidden">
+    <div class="bg-white w-full max-w-md rounded-2xl p-5 space-y-4 shadow-xl">
+      <div class="flex items-center justify-between border-b pb-2">
+        <div class="flex items-center gap-2 text-brand font-bold text-sm">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+          <span>問 AI 第二大腦</span>
+        </div>
+        <button onclick="closeSearchModal()" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
+      </div>
+
+      <div class="relative bg-slate-50 rounded-xl border border-slate-200 p-2 flex items-center">
+        <input type="text" id="modalSearchQuery" placeholder="用一句話找記憶，例如「下週要保養車嗎」" class="w-full text-xs text-slate-800 bg-transparent outline-none pr-8">
+        <button onclick="executeModalSearch()" class="absolute right-2 bg-brand text-white w-7 h-7 rounded-lg flex items-center justify-center">
+          <i class="fa-solid fa-magnifying-glass text-xs"></i>
+        </button>
+      </div>
+
+      <div class="text-[11px] text-slate-400">
+        💡 提示：支援自然語言，例如「東京」、「保養」、「會議」或「銀行開戶」。
+      </div>
+    </div>
+  </div>
 
   <!-- 彈窗 1：新增記憶輸入框 -->
   <div id="addModal" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-end sm:items-center justify-center hidden">
@@ -344,7 +371,7 @@
     </div>
   </div>
 
-  <!-- 彈窗 3：記憶詳細資訊與【全欄位手動修改】面板 -->
+  <!-- 彈窗 3：記憶詳細資訊與全欄位手動修改面板 -->
   <div id="detailModal" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white w-full max-w-md rounded-2xl p-5 space-y-3.5 shadow-xl max-h-[90vh] overflow-y-auto">
       <div class="flex items-center justify-between border-b pb-2">
@@ -428,18 +455,10 @@
     </div>
   </div>
 
-  <!-- 彈窗 4：設定彈窗（包含暱稱、金鑰與字體大小切換設定） -->
+  <!-- 彈窗 4：設定彈窗 -->
   <div id="configModal" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white w-full max-w-sm rounded-2xl p-5 space-y-3.5 shadow-xl">
       <h3 class="text-sm font-bold text-slate-900">設定 Google 雲端與介面</h3>
-      <div>
-        <label class="block text-[11px] font-semibold text-slate-600 mb-1">字體大小調整</label>
-        <div class="grid grid-cols-3 gap-2">
-          <button type="button" onclick="setFontSize('md')" class="border border-slate-300 rounded-lg p-2 text-xs font-semibold hover:border-brand">標準 (A)</button>
-          <button type="button" onclick="setFontSize('lg')" class="border border-slate-300 rounded-lg p-2 text-sm font-bold hover:border-brand">大 (A+)</button>
-          <button type="button" onclick="setFontSize('xl')" class="border border-slate-300 rounded-lg p-2 text-base font-bold hover:border-brand">特大 (A++)</button>
-        </div>
-      </div>
       <div>
         <label class="block text-[11px] font-semibold text-slate-600 mb-1">你的暱稱</label>
         <input type="text" id="userNameInput" placeholder="例如：家廣" class="w-full border border-slate-300 rounded-lg p-2 text-xs">
@@ -470,7 +489,6 @@
 
     const CATEGORIES = ["財務", "工作", "旅行", "醫療健康", "證件", "家庭生活", "購物", "學習", "未分類"];
 
-    // 字體大小控制邏輯
     function setFontSize(size) {
       const htmlEl = document.documentElement;
       htmlEl.classList.remove('font-size-md', 'font-size-lg', 'font-size-xl');
@@ -529,7 +547,6 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-      // 載入已儲存的字體大小偏好（預設為 lg 大字體以利閱讀）
       const savedFontSize = localStorage.getItem('MEMOBOX_FONT_SIZE') || 'lg';
       setFontSize(savedFontSize);
 
@@ -581,6 +598,25 @@
       document.getElementById('addModal').classList.add('hidden');
       document.getElementById('modalInput').value = "";
       clearModalFile();
+    }
+
+    // AI 搜尋專用彈窗
+    function openSearchModal() {
+      document.getElementById('searchModal').classList.remove('hidden');
+      document.getElementById('modalSearchQuery').focus();
+    }
+
+    function closeSearchModal() {
+      document.getElementById('searchModal').classList.add('hidden');
+    }
+
+    function executeModalSearch() {
+      const q = document.getElementById('modalSearchQuery').value.trim();
+      if (q) {
+        document.getElementById('aiSearchInput').value = q;
+        searchNotes();
+      }
+      closeSearchModal();
     }
 
     function handleModalFile(e) {

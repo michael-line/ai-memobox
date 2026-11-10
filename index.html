@@ -95,22 +95,6 @@
     </div>
 
     <div>
-      <div class="flex items-center justify-between text-xs text-slate-500 mb-2 font-medium">
-        <span class="flex items-center gap-1 text-slate-700"><i class="fa-solid fa-star text-amber-400"></i> 常用</span>
-        <button class="hover:underline flex items-center gap-1 text-[11px]">管理 <i class="fa-solid fa-arrow-right text-[9px]"></i></button>
-      </div>
-      <div class="flex items-center gap-2">
-        <button onclick="filterByCategory('私密資料')" class="bg-white border border-slate-200 px-3 py-1.5 rounded-xl text-xs font-medium text-slate-700 flex items-center gap-1.5 shadow-xs">
-          <i class="fa-solid fa-lock text-purple-600 text-xs"></i>
-          <span>私密資料</span>
-        </button>
-        <button onclick="openAddModal()" class="bg-white/60 border border-dashed border-slate-300 px-3 py-1.5 rounded-xl text-xs text-slate-400 hover:text-slate-600">
-          + 加入
-        </button>
-      </div>
-    </div>
-
-    <div>
       <div class="flex items-center justify-between text-xs text-slate-500 mb-2.5 font-medium">
         <span class="text-slate-800 font-bold text-sm">文件分類</span>
         <button onclick="fetchNotesFromDrive()" class="hover:underline flex items-center gap-1 text-[11px]">
@@ -221,11 +205,6 @@
 
   </main>
 
-  <button onclick="askAIAssistant()" class="fixed right-4 bottom-20 z-40 bg-brand text-white px-3.5 py-2.5 rounded-full shadow-lg flex items-center gap-1.5 text-xs font-semibold hover:bg-brand-dark active:scale-95 transition">
-    <i class="fa-regular fa-comment-dots text-sm"></i>
-    <span>小幫手</span>
-  </button>
-
   <nav class="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-slate-200 px-6 py-2 flex items-center justify-between z-30 max-w-md mx-auto">
     <button onclick="showAllNotes()" class="flex flex-col items-center text-brand">
       <i class="fa-solid fa-house text-lg"></i>
@@ -250,7 +229,7 @@
     </button>
   </nav>
 
-  <!-- 彈窗 1：新增記憶 (加入相機/錄影/相簿選擇) -->
+  <!-- 彈窗 1：新增記憶輸入框 -->
   <div id="addModal" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-end sm:items-center justify-center hidden">
     <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-5 space-y-4 shadow-xl">
       <div class="flex items-center justify-between border-b pb-2">
@@ -282,14 +261,78 @@
           </label>
         </div>
 
-        <button id="modalSubmitBtn" onclick="submitToGoogleCloud()" class="bg-brand hover:bg-brand-dark text-white px-5 py-2.5 rounded-xl font-medium text-xs shadow-sm flex items-center gap-1.5 transition">
-          <span>AI 分析並存入</span>
+        <button id="modalAnalyzeBtn" onclick="requestAIPreview()" class="bg-brand hover:bg-brand-dark text-white px-5 py-2.5 rounded-xl font-medium text-xs shadow-sm flex items-center gap-1.5 transition">
+          <i class="fa-solid fa-wand-magic-sparkles text-xs"></i>
+          <span>AI 分析記憶</span>
         </button>
       </div>
     </div>
   </div>
 
-  <!-- 彈窗 2：記憶卡片詳細資訊與編輯分類 (含大圖檢視) -->
+  <!-- 彈窗 2：AI 分析預覽核對面板（新升級） -->
+  <div id="previewModal" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-md rounded-2xl p-5 space-y-3.5 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b pb-2">
+        <div class="flex items-center gap-1.5 text-brand font-bold text-sm">
+          <i class="fa-solid fa-sparkles"></i>
+          <span>AI 分析預覽核對</span>
+        </div>
+        <button onclick="closePreviewModal()" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
+      </div>
+
+      <div>
+        <label class="block text-[11px] font-bold text-slate-500 mb-1">標題</label>
+        <input type="text" id="prevTitle" class="w-full text-sm font-bold bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand">
+      </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block text-[11px] font-bold text-slate-500 mb-1">分類</label>
+          <select id="prevCategory" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand">
+            <option value="財務">💰 財務</option>
+            <option value="工作">💼 工作</option>
+            <option value="旅行">✈️ 旅行</option>
+            <option value="醫療健康">🏥 醫療健康</option>
+            <option value="證件">🪪 證件</option>
+            <option value="家庭生活">🏡 家庭生活</option>
+            <option value="購物">🛒 購物</option>
+            <option value="學習">📚 學習</option>
+            <option value="未分類">📂 未分類</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-500 mb-1">提醒日期</label>
+          <input type="date" id="prevReminderDate" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-[11px] font-bold text-slate-500 mb-1">一句話重點摘要</label>
+        <textarea id="prevSummary" rows="2" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand"></textarea>
+      </div>
+
+      <div>
+        <label class="block text-[11px] font-bold text-slate-500 mb-1">待辦清單 (每行一項)</label>
+        <textarea id="prevTodos" rows="2" placeholder="無待辦事項" class="w-full text-xs bg-amber-50/60 border border-amber-200 rounded-xl p-2.5 outline-none text-amber-900"></textarea>
+      </div>
+
+      <div>
+        <label class="block text-[11px] font-bold text-slate-500 mb-1">標籤 (逗號分隔)</label>
+        <input type="text" id="prevTags" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand">
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-2 border-t">
+        <button onclick="closePreviewModal()" class="text-xs text-slate-500 px-4 py-2.5 rounded-xl hover:bg-slate-100">
+          返回修改
+        </button>
+        <button id="btnConfirmSave" onclick="confirmSaveToCloud()" class="bg-brand hover:bg-brand-dark text-white text-xs px-5 py-2.5 rounded-xl font-bold shadow-sm transition">
+          確認存入雲端
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 彈窗 3：記憶卡片詳細資訊與編輯分類 -->
   <div id="detailModal" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white w-full max-w-md rounded-2xl p-5 space-y-4 shadow-xl max-h-[85vh] overflow-y-auto">
       <div class="flex items-center justify-between border-b pb-2">
@@ -297,7 +340,6 @@
         <button onclick="closeDetailModal()" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
       </div>
 
-      <!-- 詳細彈窗中的圖片大圖 -->
       <div id="detailImageContainer" class="hidden rounded-xl overflow-hidden border border-slate-200">
         <img id="detailImage" src="" alt="附件圖片" class="w-full max-h-56 object-cover cursor-pointer" onclick="openFullImage()">
       </div>
@@ -363,7 +405,7 @@
     </div>
   </div>
 
-  <!-- 設定彈窗 -->
+  <!-- 彈窗 4：設定彈窗 -->
   <div id="configModal" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white w-full max-w-sm rounded-2xl p-5 space-y-3.5 shadow-xl">
       <h3 class="text-sm font-bold text-slate-900">設定 Google 雲端與 AI</h3>
@@ -396,7 +438,6 @@
 
     const CATEGORIES = ["財務", "工作", "旅行", "醫療健康", "證件", "家庭生活", "購物", "學習", "未分類"];
 
-    // 將 Google Drive 檢視網址轉為可直接顯示的縮圖網址
     function getDriveThumbnailUrl(url) {
       if (!url) return "";
       const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
@@ -510,30 +551,96 @@
       recognition.start();
     }
 
-    async function submitToGoogleCloud() {
-      const input = document.getElementById('modalInput');
-      const text = input.value.trim();
+    // 步驟 1：發送 AI 分析請求並展示核對預覽
+    async function requestAIPreview() {
+      const text = document.getElementById('modalInput').value.trim();
       const gasUrl = localStorage.getItem('MEMOBOX_GAS_URL');
       const apiKey = localStorage.getItem('MEMOBOX_GEMINI_KEY');
 
       if (!text && !modalFileBase64) {
-        alert('請先輸入筆記或夾帶檔案');
+        alert('請先輸入筆記或夾帶照片');
         return;
       }
       if (!gasUrl) {
-        alert('請先在設定中輸入 Google Apps Script 網址');
+        alert('請先設定 Google Apps Script 網址');
         toggleConfigModal();
         return;
       }
 
-      const btn = document.getElementById('modalSubmitBtn');
+      const btn = document.getElementById('modalAnalyzeBtn');
       btn.disabled = true;
-      btn.innerHTML = '<span>AI 分析並寫入雲端...</span>';
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>AI 分析中...</span>';
 
       try {
         const payload = {
+          action: "previewAnalyze",
           content: text,
           apiKey: apiKey || "",
+          fileBase64: modalFileBase64
+        };
+
+        const res = await fetch(gasUrl, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload)
+        });
+
+        const json = await res.json();
+        if (json.status === "error") throw new Error(json.message);
+
+        const ai = json.aiResult;
+        
+        // 填入預覽核對面板
+        document.getElementById('prevTitle').value = ai.title || '';
+        document.getElementById('prevCategory').value = ai.category || '未分類';
+        document.getElementById('prevReminderDate').value = ai.reminder_date || '';
+        document.getElementById('prevSummary').value = ai.summary || '';
+        document.getElementById('prevTodos').value = Array.isArray(ai.action_items) ? ai.action_items.join('\n') : (ai.action_items || '');
+        document.getElementById('prevTags').value = Array.isArray(ai.tags) ? ai.tags.join(', ') : (ai.tags || '');
+
+        // 關閉輸入彈窗，打開核對預覽彈窗
+        document.getElementById('addModal').classList.add('hidden');
+        document.getElementById('previewModal').classList.remove('hidden');
+
+      } catch (err) {
+        alert("分析失敗：" + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles text-xs"></i><span>AI 分析記憶</span>';
+      }
+    }
+
+    function closePreviewModal() {
+      document.getElementById('previewModal').classList.add('hidden');
+      document.getElementById('addModal').classList.remove('hidden');
+    }
+
+    // 步驟 2：核對確認後寫入雲端
+    async function confirmSaveToCloud() {
+      const gasUrl = localStorage.getItem('MEMOBOX_GAS_URL');
+      if (!gasUrl) return;
+
+      const rawContent = document.getElementById('modalInput').value.trim();
+      const title = document.getElementById('prevTitle').value.trim();
+      const category = document.getElementById('prevCategory').value;
+      const reminderDate = document.getElementById('prevReminderDate').value;
+      const summary = document.getElementById('prevSummary').value.trim();
+      const todos = document.getElementById('prevTodos').value.trim();
+      const tags = document.getElementById('prevTags').value.trim();
+
+      const btn = document.getElementById('btnConfirmSave');
+      btn.disabled = true;
+      btn.innerText = '寫入雲端中...';
+
+      try {
+        const payload = {
+          content: rawContent,
+          title: title,
+          category: category,
+          reminder_date: reminderDate,
+          summary: summary,
+          action_items: todos ? todos.split('\n') : [],
+          tags: tags ? tags.split(',').map(t => t.trim()) : [],
           fileBase64: modalFileBase64,
           fileName: modalFileName
         };
@@ -545,17 +652,19 @@
         });
 
         const json = await res.json();
-        if (json.status === "error") {
-          throw new Error(json.message);
-        }
+        if (json.status === "error") throw new Error(json.message);
 
-        closeAddModal();
+        // 成功存入，關閉所有彈窗並清空
+        document.getElementById('previewModal').classList.add('hidden');
+        document.getElementById('modalInput').value = "";
+        clearModalFile();
         fetchNotesFromDrive();
-      } catch (e) {
-        alert("存入失敗：" + e.message);
+
+      } catch (err) {
+        alert("存入失敗：" + err.message);
       } finally {
         btn.disabled = false;
-        btn.innerHTML = '<span>AI 分析並存入</span>';
+        btn.innerText = '確認存入雲端';
       }
     }
 
@@ -660,7 +769,6 @@
       }
     }
 
-    // 渲染卡片：若有圖片附件，直接在卡片內展示縮圖
     function renderNotesList(list) {
       const wrapper = document.getElementById('cardsWrapper');
       if (!list || list.length === 0) {
@@ -701,7 +809,6 @@
       }).join('');
     }
 
-    // 開啟卡片詳情
     function openDetailModal(index) {
       const item = allNotes[index];
       if (!item) return;
@@ -713,7 +820,6 @@
       document.getElementById('detailSummary').innerText = item['摘要'] || '無摘要';
       document.getElementById('detailRawContent').innerText = item['原始內容'] || '';
 
-      // 大圖檢視
       const thumbUrl = getDriveThumbnailUrl(item['附件連結']);
       const imgContainer = document.getElementById('detailImageContainer');
       const imgEl = document.getElementById('detailImage');
@@ -853,13 +959,6 @@
       );
       renderNotesList(res);
       window.scrollTo({ top: document.getElementById('notesSection').offsetTop - 60, behavior: 'smooth' });
-    }
-
-    function askAIAssistant() {
-      const q = prompt("小幫手：請問你想尋找或整理記憶夾中的什麼內容？");
-      if (!q) return;
-      document.getElementById('aiSearchInput').value = q;
-      searchNotes();
     }
   </script>
 </body>

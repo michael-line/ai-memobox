@@ -267,18 +267,15 @@
 
       <div class="flex items-center justify-between pt-1">
         <div class="flex items-center space-x-2 text-slate-600">
-          <!-- 語音按鈕 -->
           <button id="modalVoiceBtn" onclick="toggleVoiceInputModal()" title="語音輸入" class="p-2 hover:bg-slate-100 rounded-full text-base">
             <i class="fa-solid fa-microphone"></i>
           </button>
           
-          <!-- 直接拍照按鈕（喚起相機並儲存於手機相簿） -->
           <label title="即時拍照" class="p-2 hover:bg-slate-100 rounded-full text-base cursor-pointer text-brand">
             <i class="fa-solid fa-camera"></i>
             <input type="file" id="modalCameraInput" accept="image/*" capture="environment" class="hidden" onchange="handleModalFile(event)">
           </label>
 
-          <!-- 相簿選擇按鈕 -->
           <label title="從相簿選取" class="p-2 hover:bg-slate-100 rounded-full text-base cursor-pointer">
             <i class="fa-regular fa-image"></i>
             <input type="file" id="modalFileInput" accept="image/*,video/*" class="hidden" onchange="handleModalFile(event)">
@@ -292,12 +289,17 @@
     </div>
   </div>
 
-  <!-- 彈窗 2：記憶卡片詳細資訊與編輯分類 -->
+  <!-- 彈窗 2：記憶卡片詳細資訊與編輯分類 (含大圖檢視) -->
   <div id="detailModal" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white w-full max-w-md rounded-2xl p-5 space-y-4 shadow-xl max-h-[85vh] overflow-y-auto">
       <div class="flex items-center justify-between border-b pb-2">
         <span id="detailBadge" class="text-xs px-2.5 py-1 rounded-md bg-brand-light text-brand font-medium"></span>
         <button onclick="closeDetailModal()" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
+      </div>
+
+      <!-- 詳細彈窗中的圖片大圖 -->
+      <div id="detailImageContainer" class="hidden rounded-xl overflow-hidden border border-slate-200">
+        <img id="detailImage" src="" alt="附件圖片" class="w-full max-h-56 object-cover cursor-pointer" onclick="openFullImage()">
       </div>
 
       <div>
@@ -331,10 +333,10 @@
       </div>
 
       <div id="detailAttachmentWrapper" class="hidden">
-        <span class="text-[11px] font-bold text-slate-500 block mb-1">雲端附件</span>
+        <span class="text-[11px] font-bold text-slate-500 block mb-1">雲端檔案連結</span>
         <a id="detailAttachmentLink" href="#" target="_blank" class="inline-flex items-center gap-2 text-xs text-brand font-medium hover:underline p-2 bg-emerald-50 rounded-xl w-full">
           <i class="fa-solid fa-paperclip"></i>
-          <span class="truncate">開啟雲端檔案 / 圖片</span>
+          <span class="truncate">在 Google Drive 開啟原檔</span>
         </a>
       </div>
 
@@ -361,7 +363,7 @@
     </div>
   </div>
 
-  <!-- 彈窗 3：設定彈窗 -->
+  <!-- 設定彈窗 -->
   <div id="configModal" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white w-full max-w-sm rounded-2xl p-5 space-y-3.5 shadow-xl">
       <h3 class="text-sm font-bold text-slate-900">設定 Google 雲端與 AI</h3>
@@ -393,6 +395,16 @@
     let recognition = null;
 
     const CATEGORIES = ["財務", "工作", "旅行", "醫療健康", "證件", "家庭生活", "購物", "學習", "未分類"];
+
+    // 將 Google Drive 檢視網址轉為可直接顯示的縮圖網址
+    function getDriveThumbnailUrl(url) {
+      if (!url) return "";
+      const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+      if (match && match[1]) {
+        return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w600`;
+      }
+      return "";
+    }
 
     window.addEventListener('DOMContentLoaded', () => {
       const hour = new Date().getHours();
@@ -648,7 +660,7 @@
       }
     }
 
-    // 渲染卡片：每張卡片皆可點開彈窗查看詳情
+    // 渲染卡片：若有圖片附件，直接在卡片內展示縮圖
     function renderNotesList(list) {
       const wrapper = document.getElementById('cardsWrapper');
       if (!list || list.length === 0) {
@@ -656,30 +668,40 @@
         return;
       }
 
-      wrapper.innerHTML = list.map((item, index) => `
-        <div onclick="openDetailModal(${index})" class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs space-y-2 cursor-pointer active:scale-[0.99] hover:border-brand/60 transition">
-          <div class="flex items-center justify-between">
-            <span class="text-[10px] px-2 py-0.5 rounded-md bg-brand-light text-brand font-medium">${item['分類'] || '未分類'}</span>
-            <span class="text-[10px] text-slate-400">${item['建立時間'] ? item['建立時間'].substring(5, 16) : ''}</span>
-          </div>
-          <h4 class="text-sm font-bold text-slate-800">${item['標題'] || '無標題'}</h4>
-          <p class="text-xs text-slate-600 line-clamp-2">${item['摘要'] || item['原始內容'] || ''}</p>
-          
-          ${item['待辦清單'] ? `
-            <div class="bg-amber-50/70 border border-amber-200/60 rounded-xl p-2 text-[11px] text-amber-800">
-              📌 <strong>待辦：</strong>\n${item['待辦清單']}
-            </div>
-          ` : ''}
+      wrapper.innerHTML = list.map((item, index) => {
+        const thumbUrl = getDriveThumbnailUrl(item['附件連結']);
+        return `
+          <div onclick="openDetailModal(${index})" class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs space-y-2 cursor-pointer active:scale-[0.99] hover:border-brand/60 transition">
+            
+            ${thumbUrl ? `
+              <div class="w-full h-36 rounded-xl overflow-hidden mb-2 bg-slate-100">
+                <img src="${thumbUrl}" alt="縮圖" class="w-full h-full object-cover" loading="lazy">
+              </div>
+            ` : ''}
 
-          <div class="flex items-center justify-between pt-1 text-[11px] text-slate-400">
-            <span>${item['提醒日期'] ? `⏰ ${item['提醒日期']}` : ''}</span>
-            <span class="text-brand flex items-center gap-1 text-[11px]">查看詳情 / 整理 <i class="fa-solid fa-chevron-right text-[9px]"></i></span>
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] px-2 py-0.5 rounded-md bg-brand-light text-brand font-medium">${item['分類'] || '未分類'}</span>
+              <span class="text-[10px] text-slate-400">${item['建立時間'] ? item['建立時間'].substring(5, 16) : ''}</span>
+            </div>
+            <h4 class="text-sm font-bold text-slate-800">${item['標題'] || '無標題'}</h4>
+            <p class="text-xs text-slate-600 line-clamp-2">${item['摘要'] || item['原始內容'] || ''}</p>
+            
+            ${item['待辦清單'] ? `
+              <div class="bg-amber-50/70 border border-amber-200/60 rounded-xl p-2 text-[11px] text-amber-800">
+                📌 <strong>待辦：</strong>\n${item['待辦清單']}
+              </div>
+            ` : ''}
+
+            <div class="flex items-center justify-between pt-1 text-[11px] text-slate-400">
+              <span>${item['提醒日期'] ? `⏰ ${item['提醒日期']}` : ''}</span>
+              <span class="text-brand flex items-center gap-1 text-[11px]">查看詳情 / 整理 <i class="fa-solid fa-chevron-right text-[9px]"></i></span>
+            </div>
           </div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
     }
 
-    // 開啟卡片詳情彈窗
+    // 開啟卡片詳情
     function openDetailModal(index) {
       const item = allNotes[index];
       if (!item) return;
@@ -690,6 +712,17 @@
       document.getElementById('detailTimestamp').innerText = `建立時間：${item['建立時間'] || ''}`;
       document.getElementById('detailSummary').innerText = item['摘要'] || '無摘要';
       document.getElementById('detailRawContent').innerText = item['原始內容'] || '';
+
+      // 大圖檢視
+      const thumbUrl = getDriveThumbnailUrl(item['附件連結']);
+      const imgContainer = document.getElementById('detailImageContainer');
+      const imgEl = document.getElementById('detailImage');
+      if (thumbUrl) {
+        imgEl.src = thumbUrl;
+        imgContainer.classList.remove('hidden');
+      } else {
+        imgContainer.classList.add('hidden');
+      }
 
       const todoWrap = document.getElementById('detailTodoWrapper');
       if (item['待辦清單'] && item['待辦清單'].trim()) {
@@ -728,12 +761,17 @@
       document.getElementById('detailModal').classList.remove('hidden');
     }
 
+    function openFullImage() {
+      if (currentDetailNote && currentDetailNote['附件連結']) {
+        window.open(currentDetailNote['附件連結'], '_blank');
+      }
+    }
+
     function closeDetailModal() {
       document.getElementById('detailModal').classList.add('hidden');
       currentDetailNote = null;
     }
 
-    // 更新分類寫回 Google 試算表
     async function updateCurrentNoteCategory() {
       if (!currentDetailNote || !currentDetailNote['ID']) return;
       const gasUrl = localStorage.getItem('MEMOBOX_GAS_URL');

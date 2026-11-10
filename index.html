@@ -76,8 +76,8 @@
       <div class="pl-3 pr-2 text-brand text-lg">
         <i class="fa-solid fa-wand-magic-sparkles"></i>
       </div>
-      <input type="text" id="aiSearchInput" onkeydown="handleSearchKey(event)" placeholder="輸入關鍵字或按右邊按鈕..." class="w-full text-xs text-slate-700 placeholder-slate-400 bg-transparent outline-none">
-      <button onclick="searchNotes()" class="bg-brand hover:bg-brand-dark text-white rounded-xl w-8 h-8 flex items-center justify-center shrink-0 transition">
+      <input type="text" id="aiSearchInput" onkeydown="handleSearchKey(event)" placeholder="問 AI 找資料，例如「下週車輛保養」" class="w-full text-xs text-slate-700 placeholder-slate-400 bg-transparent outline-none">
+      <button onclick="triggerSmartAISearch()" class="bg-brand hover:bg-brand-dark text-white rounded-xl w-8 h-8 flex items-center justify-center shrink-0 transition">
         <i class="fa-solid fa-magnifying-glass text-xs"></i>
       </button>
     </div>
@@ -209,6 +209,15 @@
 
     <!-- 記憶清單展示區 -->
     <div id="notesSection" class="pt-2">
+      <!-- AI 語意解答氣泡（全新增強） -->
+      <div id="aiDirectAnswerWrapper" class="hidden mb-4 bg-emerald-50 border border-emerald-200/80 rounded-2xl p-4 space-y-1 shadow-xs">
+        <div class="flex items-center gap-1.5 text-xs font-bold text-brand">
+          <i class="fa-solid fa-sparkles"></i>
+          <span>AI 第二大腦解答：</span>
+        </div>
+        <p id="aiDirectAnswerText" class="text-xs text-emerald-950 leading-relaxed font-medium"></p>
+      </div>
+
       <div class="flex items-center justify-between mb-2">
         <h3 class="text-xs font-bold text-slate-700" id="currentFilterTitle">最近新增記憶</h3>
         <button onclick="fetchNotesFromDrive()" class="text-xs text-brand hover:underline">重新整理</button>
@@ -233,7 +242,6 @@
       <i class="fa-solid fa-plus text-xl"></i>
     </button>
 
-    <!-- 修正：點擊改為打開乾淨的專用 AI 搜尋彈窗 -->
     <button onclick="openSearchModal()" class="flex flex-col items-center text-slate-400 hover:text-slate-600">
       <i class="fa-solid fa-wand-magic-sparkles text-lg"></i>
       <span class="text-[10px] mt-0.5">AI 搜尋</span>
@@ -244,7 +252,7 @@
     </button>
   </nav>
 
-  <!-- 專屬 AI 搜尋彈窗 (避免觸發系統網址提示) -->
+  <!-- 專屬 AI 搜尋彈窗 -->
   <div id="searchModal" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-start justify-center p-4 pt-16 hidden">
     <div class="bg-white w-full max-w-md rounded-2xl p-5 space-y-4 shadow-xl">
       <div class="flex items-center justify-between border-b pb-2">
@@ -256,14 +264,14 @@
       </div>
 
       <div class="relative bg-slate-50 rounded-xl border border-slate-200 p-2 flex items-center">
-        <input type="text" id="modalSearchQuery" placeholder="用一句話找記憶，例如「下週要保養車嗎」" class="w-full text-xs text-slate-800 bg-transparent outline-none pr-8">
-        <button onclick="executeModalSearch()" class="absolute right-2 bg-brand text-white w-7 h-7 rounded-lg flex items-center justify-center">
+        <input type="text" id="modalSearchQuery" placeholder="用自然一句話提問，例如「何時要保養車」" class="w-full text-xs text-slate-800 bg-transparent outline-none pr-8" onkeydown="if(event.key==='Enter') executeModalSearch()">
+        <button id="btnExecuteSearch" onclick="executeModalSearch()" class="absolute right-2 bg-brand text-white w-7 h-7 rounded-lg flex items-center justify-center">
           <i class="fa-solid fa-magnifying-glass text-xs"></i>
         </button>
       </div>
 
       <div class="text-[11px] text-slate-400">
-        💡 提示：支援自然語言，例如「東京」、「保養」、「會議」或「銀行開戶」。
+        💡 真正的語意檢索：即便字句不同（例如「車子」與「汽車」），Gemini 也會理解並找出精確紀錄與直接回答！
       </div>
     </div>
   </div>
@@ -600,7 +608,6 @@
       clearModalFile();
     }
 
-    // AI 搜尋專用彈窗
     function openSearchModal() {
       document.getElementById('searchModal').classList.remove('hidden');
       document.getElementById('modalSearchQuery').focus();
@@ -614,7 +621,7 @@
       const q = document.getElementById('modalSearchQuery').value.trim();
       if (q) {
         document.getElementById('aiSearchInput').value = q;
-        searchNotes();
+        triggerSmartAISearch(q);
       }
       closeSearchModal();
     }
@@ -888,7 +895,7 @@
     function renderNotesList(list) {
       const wrapper = document.getElementById('cardsWrapper');
       if (!list || list.length === 0) {
-        wrapper.innerHTML = '<div class="text-center text-xs text-slate-400 py-6">目前此分類尚無資料</div>';
+        wrapper.innerHTML = '<div class="text-center text-xs text-slate-400 py-6">目前沒有找到符合條件的記憶資料</div>';
         return;
       }
 
@@ -1054,6 +1061,7 @@
     }
 
     function filterByCategory(cat) {
+      document.getElementById('aiDirectAnswerWrapper').classList.add('hidden');
       document.getElementById('currentFilterTitle').innerText = `分類：${cat}`;
       const filtered = allNotes.filter(n => (n['分類'] || '未分類') === cat);
       renderNotesList(filtered);
@@ -1061,6 +1069,7 @@
     }
 
     function filterByReminders() {
+      document.getElementById('aiDirectAnswerWrapper').classList.add('hidden');
       document.getElementById('currentFilterTitle').innerText = "全部提醒與待辦事項";
       const filtered = allNotes.filter(n => (n['提醒日期'] && n['提醒日期'].trim()) || (n['待辦清單'] && n['待辦清單'].trim()));
       renderNotesList(filtered);
@@ -1068,30 +1077,103 @@
     }
 
     function showAllNotes() {
+      document.getElementById('aiDirectAnswerWrapper').classList.add('hidden');
       document.getElementById('currentFilterTitle').innerText = "全部記憶卡片";
       renderNotesList(allNotes);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function handleSearchKey(e) {
-      if (e.key === 'Enter') searchNotes();
+      if (e.key === 'Enter') triggerSmartAISearch();
     }
 
-    function searchNotes() {
-      const q = document.getElementById('aiSearchInput').value.trim().toLowerCase();
+    // 核心升級：真正的 Gemini AI 語意第二大腦檢索
+    async function triggerSmartAISearch(customQuery) {
+      const q = (customQuery || document.getElementById('aiSearchInput').value || '').trim();
       if (!q) {
         showAllNotes();
         return;
       }
-      document.getElementById('currentFilterTitle').innerText = `搜尋結果：「${q}」`;
-      const res = allNotes.filter(n => 
-        (n['標題'] && n['標題'].toLowerCase().includes(q)) ||
-        (n['摘要'] && n['摘要'].toLowerCase().includes(q)) ||
-        (n['標籤'] && n['標籤'].toLowerCase().includes(q)) ||
-        (n['原始內容'] && n['原始內容'].toLowerCase().includes(q))
-      );
-      renderNotesList(res);
+
+      const apiKey = localStorage.getItem('MEMOBOX_GEMINI_KEY');
+      const answerWrapper = document.getElementById('aiDirectAnswerWrapper');
+      const answerText = document.getElementById('aiDirectAnswerText');
+      const titleEl = document.getElementById('currentFilterTitle');
+
+      titleEl.innerText = `AI 正在檢索：「${q}」...`;
+      answerWrapper.classList.add('hidden');
+
+      // 若有提供 Gemini API Key，直接呼叫 Gemini 3.1 進行語意分析檢索
+      if (apiKey && allNotes.length > 0) {
+        try {
+          const notesContext = allNotes.slice(0, 30).map((n, i) => 
+            `[ID: ${i}] 標題: ${n['標題'] || ''} | 分類: ${n['分類'] || ''} | 摘要: ${n['摘要'] || ''} | 待辦: ${n['待辦清單'] || ''} | 提醒日: ${n['提醒日期'] || ''}`
+          ).join('\n');
+
+          const prompt = `你是一個個人的第二大腦記憶庫管理員。使用者提問：「${q}」。
+以下是記憶庫中現有的資料：
+${notesContext}
+
+請根據使用者的問題，完成兩件事：
+1. 用親切繁體中文直接回答使用者的問題（25字以內）。
+2. 列出與該問題最相關的筆記 [ID] 清單。
+
+請務必嚴格回傳純 JSON 格式（嚴禁 markdown 標籤）：
+{
+  "answer": "一句話直接回答",
+  "matched_ids": [0, 2]
+}`;
+
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`;
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            const clean = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+            const aiResult = JSON.parse(clean);
+
+            // 顯示 AI 的直接回答
+            if (aiResult.answer) {
+              answerText.innerText = aiResult.answer;
+              answerWrapper.classList.remove('hidden');
+            }
+
+            // 挑出被 AI 判斷相關的卡片
+            if (Array.isArray(aiResult.matched_ids) && aiResult.matched_ids.length > 0) {
+              const matchedNotes = aiResult.matched_ids.map(id => allNotes[id]).filter(Boolean);
+              titleEl.innerText = `AI 語意搜尋：「${q}」（找到 ${matchedNotes.length} 筆相關）`;
+              renderNotesList(matchedNotes);
+              window.scrollTo({ top: document.getElementById('notesSection').offsetTop - 60, behavior: 'smooth' });
+              return;
+            }
+          }
+        } catch (err) {
+          console.warn("AI 語意檢索轉降級為模糊比對:", err);
+        }
+      }
+
+      // 降級防呆：多詞模糊比對（避免單字不吻合就完全找不到）
+      const tokens = q.toLowerCase().split(/\s+/).filter(Boolean);
+      const filtered = allNotes.filter(n => {
+        const fullContent = [
+          n['標題'], n['摘要'], n['分類'], n['標籤'], n['待辦清單'], n['原始內容'], n['提醒日期']
+        ].join(' ').toLowerCase();
+
+        return tokens.some(tok => fullContent.includes(tok));
+      });
+
+      titleEl.innerText = `搜尋結果：「${q}」（找到 ${filtered.length} 筆）`;
+      renderNotesList(filtered);
       window.scrollTo({ top: document.getElementById('notesSection').offsetTop - 60, behavior: 'smooth' });
+    }
+
+    function searchNotes() {
+      triggerSmartAISearch();
     }
   </script>
 </body>

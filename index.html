@@ -1191,70 +1191,106 @@
       }
     }
 
-   async function exportDataAsPDF() {
+   // 輔助函式：將遠端圖片 URL 轉為 Base64 字串，徹底解決 PDF 跨域被擋與不顯示問題
+async function getBase64ImageFromUrl(imageUrl) {
+  if (!imageUrl) return '';
+  if (imageUrl.startsWith('data:image')) return imageUrl; // 已經是 Base64 直接回傳
+  try {
+    const res = await fetch(imageUrl, { mode: 'cors' });
+    const blob = await res.blob();
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = () => resolve('');
+      reader.readAsDataURL(blob);
+    });
+  } catch (e) {
+    // 若被 CORS 嚴格攔截，回退使用原始 URL
+    return imageUrl;
+  }
+}
+
+async function exportDataAsPDF() {
   if (!allNotes || allNotes.length === 0) {
     alert('目前無任何記憶資料可匯出！');
     return;
   }
 
-  const printArea = document.createElement('div');
-  printArea.style.padding = '20px';
-  printArea.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-  printArea.style.color = '#1e293b';
+  // 提示使用者處理中（圖片轉換需 1~2 秒）
+  const btn = event?.currentTarget;
+  const originalText = btn ? btn.innerHTML : '';
+  if (btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 正在處理圖片並匯出 PDF...';
 
-  const todayStr = new Date().toISOString().substring(0, 10);
+  try {
+    const printArea = document.createElement('div');
+    printArea.style.padding = '20px';
+    printArea.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    printArea.style.color = '#1e293b';
+    printArea.style.background = '#ffffff';
 
-  let html = `
-    <div style="border-bottom: 2px solid #388E6C; padding-bottom: 10px; margin-bottom: 16px;">
-      <h1 style="font-size: 20px; font-weight: bold; color: #388E6C; margin: 0;">AI 記憶夾 - 完整資料備份</h1>
-      <p style="font-size: 11px; color: #64748b; margin: 4px 0 0 0;">匯出日期：${todayStr} ｜ 總筆數：${allNotes.length} 筆</p>
-    </div>
-    <div style="display: flex; flex-direction: column; gap: 14px;">
-  `;
+    const todayStr = new Date().toISOString().substring(0, 10);
 
-  allNotes.forEach((n, idx) => {
-    // 自動相容所有照片/圖片欄位名稱
-    const photoUrl = n['圖片'] || n['相片'] || n['照片'] || n['image'] || n['imageUrl'] || n['圖片網址'] || '';
-    const imgHtml = photoUrl ? `
-      <div style="margin-top: 8px;">
-        <img src="${photoUrl}" crossorigin="anonymous" style="max-width: 100%; max-height: 220px; border-radius: 6px; border: 1px solid #cbd5e1; object-fit: contain; display: block;" />
+    let html = `
+      <div style="border-bottom: 2px solid #388E6C; padding-bottom: 10px; margin-bottom: 16px;">
+        <h1 style="font-size: 20px; font-weight: bold; color: #388E6C; margin: 0;">AI 記憶夾 - 完整資料備份</h1>
+        <p style="font-size: 11px; color: #64748b; margin: 4px 0 0 0;">匯出日期：${todayStr} ｜ 總筆數：${allNotes.length} 筆</p>
       </div>
-    ` : '';
-
-    html += `
-      <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; background: #ffffff; page-break-inside: avoid;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-          <strong style="font-size: 13px; color: #0f172a;">${idx + 1}. ${n['標題'] || '無標題'}</strong>
-          <span style="font-size: 10px; background: #E8F5E9; color: #2B6F54; padding: 2px 6px; border-radius: 4px; font-weight: bold;">
-            ${n['分類'] || '未分類'}
-          </span>
-        </div>
-        <p style="font-size: 11px; color: #475569; margin: 4px 0; line-height: 1.5;">
-          ${n['摘要'] || n['原始內容'] || '無內容'}
-        </p>
-        ${imgHtml}
-        ${n['待辦清單'] ? `<div style="font-size: 10px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; margin-top: 6px;">📌 <strong>待辦：</strong> ${String(n['待辦清單']).replace(/\n/g, '、')}</div>` : ''}
-        ${n['提醒日期'] ? `<div style="font-size: 10px; color: #ea580c; margin-top: 4px;">⏰ 提醒日期：${n['提醒日期']}</div>` : ''}
-      </div>
+      <div style="display: flex; flex-direction: column; gap: 14px;">
     `;
-  });
 
-  html += `</div>`;
-  printArea.innerHTML = html;
+    // 逐筆處理圖片轉換與 HTML 組裝
+    for (let idx = 0; idx < allNotes.length; idx++) {
+      const n = allNotes[idx];
+      // 廣泛比對所有可能的相片欄位名稱
+      const rawPhotoUrl = n['圖片'] || n['相片'] || n['照片'] || n['image'] || n['imageUrl'] || n['圖片網址'] || n['Photo'] || '';
+      
+      let imgHtml = '';
+      if (rawPhotoUrl) {
+        const base64Data = await getBase64ImageFromUrl(rawPhotoUrl);
+        const finalSrc = base64Data || rawPhotoUrl;
+        imgHtml = `
+          <div style="margin-top: 8px;">
+            <img src="${finalSrc}" crossorigin="anonymous" style="max-width: 260px; max-height: 220px; border-radius: 6px; border: 1px solid #cbd5e1; object-fit: contain; display: block;" />
+          </div>
+        `;
+      }
 
-  const opt = {
-    margin: [10, 10, 10, 10],
-    filename: `AI記憶夾備份_${todayStr}.pdf`,
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true, allowTaint: true },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  };
+      html += `
+        <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; background: #ffffff; page-break-inside: avoid;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <strong style="font-size: 13px; color: #0f172a;">${idx + 1}. ${n['標題'] || '無標題'}</strong>
+            <span style="font-size: 10px; background: #E8F5E9; color: #2B6F54; padding: 2px 6px; border-radius: 4px; font-weight: bold;">
+              ${n['分類'] || '未分類'}
+            </span>
+          </div>
+          <p style="font-size: 11px; color: #475569; margin: 4px 0; line-height: 1.5;">
+            ${n['摘要'] || n['原始內容'] || '無內容'}
+          </p>
+          ${imgHtml}
+          ${n['待辦清單'] ? `<div style="font-size: 10px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; margin-top: 6px;">📌 <strong>待辦：</strong> ${String(n['待辦清單']).replace(/\n/g, '、')}</div>` : ''}
+          ${n['提醒日期'] ? `<div style="font-size: 10px; color: #ea580c; margin-top: 4px;">⏰ 提醒日期：${n['提醒日期']}</div>` : ''}
+        </div>
+      `;
+    }
 
-  html2pdf().set(opt).from(printArea).save().then(() => {
+    html += `</div>`;
+    printArea.innerHTML = html;
+
+    const opt = {
+      margin: [10, 10, 10, 10],
+      filename: `AI記憶夾備份_${todayStr}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, allowTaint: false },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    await html2pdf().set(opt).from(printArea).save();
     alert('PDF 備份已成功下載！');
-  }).catch(err => {
+  } catch (err) {
     alert('PDF 匯出失敗：' + err.message);
-  });
+  } finally {
+    if (btn) btn.innerHTML = originalText;
+  }
 }
 
     async function saveFullNoteEdit() {

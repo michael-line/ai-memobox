@@ -33,9 +33,11 @@
     .pb-safe {
       padding-bottom: calc(85px + env(safe-area-inset-bottom, 0px));
     }
-    html.font-size-md { font-size: 15px; }
-    html.font-size-lg { font-size: 17px; }
-    html.font-size-xl { font-size: 19px; }
+    html.font-size-md  { font-size: 15px; }
+    html.font-size-lg  { font-size: 17px; }
+    html.font-size-xl  { font-size: 19px; }
+    html.font-size-2xl { font-size: 21px; }
+    html.font-size-3xl { font-size: 23px; }
     
     .modal-layer {
       z-index: 99999 !important;
@@ -53,11 +55,13 @@
     </div>
 
     <div class="flex items-center space-x-2 text-slate-600">
-      <div class="flex items-center bg-white border border-slate-200/90 rounded-xl px-1.5 py-0.5 shadow-xs">
-        <button onclick="setFontSize('md')" id="btnFontMd" title="標準字體" class="text-xs font-bold px-2 py-1 rounded-lg text-slate-500 hover:text-brand transition">A</button>
-        <button onclick="setFontSize('lg')" id="btnFontLg" title="大字體" class="text-sm font-bold px-2 py-1 rounded-lg text-slate-500 hover:text-brand transition">A+</button>
-        <button onclick="setFontSize('xl')" id="btnFontXl" title="特大字體" class="text-base font-bold px-2 py-1 rounded-lg text-slate-500 hover:text-brand transition">A++</button>
-      </div>
+      <div class="flex items-center bg-white border border-slate-200/90 rounded-xl px-1 py-0.5 shadow-xs">
+      <button onclick="setFontSize('md')" id="btnFontMd" title="標準字體" class="text-xs font-bold px-1.5 py-1 rounded-lg text-slate-500 hover:text-brand transition">A</button>
+      <button onclick="setFontSize('lg')" id="btnFontLg" title="大字體" class="text-xs font-bold px-1.5 py-1 rounded-lg text-slate-500 hover:text-brand transition">A+</button>
+      <button onclick="setFontSize('xl')" id="btnFontXl" title="特大字體" class="text-xs font-bold px-1.5 py-1 rounded-lg text-slate-500 hover:text-brand transition">A++</button>
+      <button onclick="setFontSize('2xl')" id="btnFont2xl" title="超大字體" class="text-xs font-bold px-1.5 py-1 rounded-lg text-slate-500 hover:text-brand transition">A+++</button>
+      <button onclick="setFontSize('3xl')" id="btnFont3xl" title="極大字體" class="text-xs font-bold px-1.5 py-1 rounded-lg text-slate-500 hover:text-brand transition">MAX</button>
+</div>
 
       <button onclick="toggleConfigModal()" title="設定與資料備份" class="hover:text-brand transition text-base p-1.5">
         <i class="fa-solid fa-gear"></i>
@@ -532,25 +536,33 @@
     const CATEGORIES = ["財務", "工作", "旅行", "醫療健康", "證件", "家庭生活", "購物", "學習", "未分類"];
 
     function setFontSize(size) {
-      const htmlEl = document.documentElement;
-      htmlEl.classList.remove('font-size-md', 'font-size-lg', 'font-size-xl');
-      htmlEl.classList.add(`font-size-${size}`);
-      localStorage.setItem('MEMOBOX_FONT_SIZE', size);
-      updateFontSizeButtonStyles(size);
-    }
+  const htmlEl = document.documentElement;
+  htmlEl.classList.remove('font-size-md', 'font-size-lg', 'font-size-xl', 'font-size-2xl', 'font-size-3xl');
+  htmlEl.classList.add(`font-size-${size}`);
+  localStorage.setItem('MEMOBOX_FONT_SIZE', size);
+  updateFontSizeButtonStyles(size);
+}
 
-    function updateFontSizeButtonStyles(activeSize) {
-      ['md', 'lg', 'xl'].forEach(sz => {
-        const btn = document.getElementById(`btnFont${sz.charAt(0).toUpperCase() + sz.slice(1)}`);
-        if (btn) {
-          if (sz === activeSize) {
-            btn.className = "text-xs font-bold px-2 py-1 rounded-lg bg-brand text-white shadow-xs transition";
-          } else {
-            btn.className = "text-xs font-bold px-2 py-1 rounded-lg text-slate-500 hover:text-brand transition";
-          }
-        }
-      });
+function updateFontSizeButtonStyles(activeSize) {
+  const sizes = [
+    { key: 'md', id: 'btnFontMd' },
+    { key: 'lg', id: 'btnFontLg' },
+    { key: 'xl', id: 'btnFontXl' },
+    { key: '2xl', id: 'btnFont2xl' },
+    { key: '3xl', id: 'btnFont3xl' }
+  ];
+
+  sizes.forEach(sz => {
+    const btn = document.getElementById(sz.id);
+    if (btn) {
+      if (sz.key === activeSize) {
+        btn.className = "text-xs font-bold px-1.5 py-1 rounded-lg bg-brand text-white shadow-xs transition";
+      } else {
+        btn.className = "text-xs font-bold px-1.5 py-1 rounded-lg text-slate-500 hover:text-brand transition";
+      }
     }
+  });
+}
 
     function getDriveThumbnailUrl(url) {
       if (!url) return "";

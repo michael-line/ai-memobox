@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-TW" class="font-size-xl">
+<html lang="zh-TW" class="font-size-md">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>記憶盒</title>
+  <title>AI 記憶夾</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script>
@@ -25,10 +25,10 @@
     }
   </script>
   <style>
-    /* 字體級距設定：保留後 3 個大字體 (xl: 19px, 2xl: 21px, 3xl: 23px) */
+    /* 原始 3 級距字體 */
+    html.font-size-md { font-size: 15px; }
+    html.font-size-lg { font-size: 17px; }
     html.font-size-xl { font-size: 19px; }
-    html.font-size-2xl { font-size: 21px; }
-    html.font-size-3xl { font-size: 23px; }
 
     body {
       -webkit-tap-highlight-color: transparent;
@@ -47,17 +47,23 @@
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen pb-24 font-sans antialiased">
 
-  <!-- 頂部精簡導航：取消文字標題，僅保留 3 級字體切換與設定按鈕 -->
+  <!-- 原始頂部導航列：包含「AI 記憶夾」標題與 3 個字體按鈕 -->
   <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 py-2.5 flex items-center justify-between">
-    <!-- 左側字體切換 -->
-    <div class="flex items-center bg-slate-50 border border-slate-200/90 rounded-xl px-1 py-0.5 shadow-xs">
-      <button onclick="setFontSize('xl')" id="btnFontXl" title="大字體" class="text-xs font-bold px-2 py-1 rounded-lg text-slate-500 hover:text-brand transition">A</button>
-      <button onclick="setFontSize('2xl')" id="btnFont2xl" title="特大字體" class="text-xs font-bold px-2 py-1 rounded-lg text-slate-500 hover:text-brand transition">A+</button>
-      <button onclick="setFontSize('3xl')" id="btnFont3xl" title="極大字體" class="text-xs font-bold px-2 py-1 rounded-lg text-slate-500 hover:text-brand transition">MAX</button>
+    <div class="flex items-center space-x-2">
+      <div class="w-8 h-8 rounded-xl bg-brand flex items-center justify-center text-white font-bold text-sm shadow-xs">
+        AI
+      </div>
+      <h1 class="text-base font-bold text-slate-800 tracking-tight">AI 記憶夾</h1>
     </div>
 
-    <!-- 右側功能按鈕 -->
-    <div class="flex items-center space-x-1">
+    <div class="flex items-center space-x-2">
+      <!-- 3 級距字體切換 (md, lg, xl) -->
+      <div class="flex items-center bg-slate-50 border border-slate-200/90 rounded-xl px-1.5 py-0.5 shadow-xs">
+        <button onclick="setFontSize('md')" id="btnFontMd" title="標準字體" class="text-xs font-bold px-1.5 py-1 rounded-lg text-slate-500 hover:text-brand transition">A</button>
+        <button onclick="setFontSize('lg')" id="btnFontLg" title="大字體" class="text-xs font-bold px-1.5 py-1 rounded-lg text-slate-500 hover:text-brand transition">A+</button>
+        <button onclick="setFontSize('xl')" id="btnFontXl" title="特大字體" class="text-xs font-bold px-1.5 py-1 rounded-lg text-slate-500 hover:text-brand transition">A++</button>
+      </div>
+
       <button onclick="syncDataFromCloud()" id="btnSyncCloud" title="手動同步" class="p-2 text-slate-500 hover:text-brand rounded-xl hover:bg-slate-100 transition active:scale-95">
         <i class="fa-solid fa-arrows-rotate text-sm"></i>
       </button>
@@ -67,8 +73,17 @@
     </div>
   </header>
 
-  <!-- 主內容區：無問候語，首屏直接顯示搜尋與主要按鈕 -->
+  <!-- 主內容區 -->
   <main class="max-w-md mx-auto px-4 pt-3 space-y-3">
+
+    <!-- 原始問候橫幅 -->
+    <div class="bg-gradient-to-r from-blue-500/10 to-indigo-50/50 p-4 rounded-2xl border border-blue-100 shadow-xs flex items-center justify-between">
+      <div>
+        <h2 id="greetingText" class="text-base font-bold text-slate-800">晚安，家廣大</h2>
+        <p class="text-xs text-slate-500 mt-0.5">今天整理了哪些重要的記憶呢？</p>
+      </div>
+      <div class="text-2xl">🌙</div>
+    </div>
 
     <!-- 搜尋與 AI 檢索列 -->
     <div class="relative">
@@ -92,7 +107,7 @@
       </div>
     </div>
 
-    <!-- 添加記憶按鈕（恢復清新淺綠色風格） -->
+    <!-- 添加記憶主按鈕（綠色） -->
     <button onclick="openAddModal()" class="w-full bg-emerald-500 hover:bg-emerald-600 active:scale-[0.99] text-white py-3.5 rounded-2xl font-semibold text-base shadow-sm flex items-center justify-center gap-2 transition">
       <i class="fa-solid fa-plus text-sm"></i>
       <span>添加記憶</span>
@@ -164,7 +179,7 @@
       </div>
     </div>
 
-    <!-- 記憶清單列表 -->
+    <!-- 筆記卡片清單列表 -->
     <div id="notesSection" class="pt-2">
       <div class="flex items-center justify-between mb-2">
         <h3 id="currentFilterTitle" class="text-sm font-bold text-slate-800">全部記憶</h3>
@@ -251,34 +266,29 @@
     let currentEditId = null;
 
     window.addEventListener('DOMContentLoaded', () => {
-      const savedFontSize = localStorage.getItem('MEMOBOX_FONT_SIZE') || 'xl';
+      const savedFontSize = localStorage.getItem('MEMOBOX_FONT_SIZE') || 'md';
       setFontSize(savedFontSize);
       loadLocalNotes();
       fetchNotesFromDrive();
     });
 
+    // 原始 3 級距切換
     function setFontSize(size) {
       const htmlEl = document.documentElement;
-      htmlEl.classList.remove('font-size-xl', 'font-size-2xl', 'font-size-3xl');
+      htmlEl.classList.remove('font-size-md', 'font-size-lg', 'font-size-xl');
       htmlEl.classList.add(`font-size-${size}`);
       localStorage.setItem('MEMOBOX_FONT_SIZE', size);
       updateFontSizeButtonStyles(size);
     }
 
     function updateFontSizeButtonStyles(activeSize) {
-      const sizes = [
-        { key: 'xl', id: 'btnFontXl' },
-        { key: '2xl', id: 'btnFont2xl' },
-        { key: '3xl', id: 'btnFont3xl' }
-      ];
-
-      sizes.forEach(sz => {
-        const btn = document.getElementById(sz.id);
+      ['md', 'lg', 'xl'].forEach(sz => {
+        const btn = document.getElementById(`btnFont${sz.charAt(0).toUpperCase() + sz.slice(1)}`);
         if (btn) {
-          if (sz.key === activeSize) {
-            btn.className = "text-xs font-bold px-2 py-1 rounded-lg bg-brand text-white shadow-xs transition";
+          if (sz === activeSize) {
+            btn.className = "text-xs font-bold px-1.5 py-1 rounded-lg bg-brand text-white shadow-xs transition";
           } else {
-            btn.className = "text-xs font-bold px-2 py-1 rounded-lg text-slate-500 hover:text-brand transition";
+            btn.className = "text-xs font-bold px-1.5 py-1 rounded-lg text-slate-500 hover:text-brand transition";
           }
         }
       });
@@ -302,7 +312,6 @@
       if (apiKey) localStorage.setItem('MEMOBOX_GEMINI_KEY', apiKey);
       
       closeConfigModal();
-      // 保持目前載入的資料，不重新清空，僅嘗試後台拉取最新
       fetchNotesFromDrive();
     }
 
@@ -501,7 +510,6 @@
       renderNotesList(allNotes);
       closeNoteModal();
 
-      // 非同步推送到 Google 試算表
       const gasUrl = localStorage.getItem('MEMOBOX_GAS_URL');
       if (gasUrl && targetNote) {
         try {

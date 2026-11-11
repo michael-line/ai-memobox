@@ -3,10 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>AI 記憶夾</title>
-  <!-- Tailwind CSS CDN -->
+  <title>記憶盒</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- FontAwesome 圖示 -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script>
     tailwind.config = {
@@ -27,9 +25,7 @@
     }
   </script>
   <style>
-    /* 5 級距字體設定，保留後 3 個較大級距 (xl, 2xl, 3xl) */
-    html.font-size-md { font-size: 15px; }
-    html.font-size-lg { font-size: 17px; }
+    /* 字體級距設定：保留後 3 個大字體 (xl: 19px, 2xl: 21px, 3xl: 23px) */
     html.font-size-xl { font-size: 19px; }
     html.font-size-2xl { font-size: 21px; }
     html.font-size-3xl { font-size: 23px; }
@@ -51,9 +47,9 @@
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen pb-24 font-sans antialiased">
 
-  <!-- 頂部精簡導航：已刪除「AI 記憶夾」字樣，僅保留後 3 個大字體按鈕與同步/設定 -->
+  <!-- 頂部精簡導航：取消文字標題，僅保留 3 級字體切換與設定按鈕 -->
   <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 py-2.5 flex items-center justify-between">
-    <!-- 左側字體切換（保留後 3 個較大級距） -->
+    <!-- 左側字體切換 -->
     <div class="flex items-center bg-slate-50 border border-slate-200/90 rounded-xl px-1 py-0.5 shadow-xs">
       <button onclick="setFontSize('xl')" id="btnFontXl" title="大字體" class="text-xs font-bold px-2 py-1 rounded-lg text-slate-500 hover:text-brand transition">A</button>
       <button onclick="setFontSize('2xl')" id="btnFont2xl" title="特大字體" class="text-xs font-bold px-2 py-1 rounded-lg text-slate-500 hover:text-brand transition">A+</button>
@@ -71,10 +67,10 @@
     </div>
   </header>
 
-  <!-- 主內容區：已刪除問候語（晚安、家廣大...），直接進入搜尋與功能 -->
+  <!-- 主內容區：無問候語，首屏直接顯示搜尋與主要按鈕 -->
   <main class="max-w-md mx-auto px-4 pt-3 space-y-3">
 
-    <!-- 智慧搜尋與 AI 檢索列 -->
+    <!-- 搜尋與 AI 檢索列 -->
     <div class="relative">
       <input type="text" id="aiSearchInput" onkeydown="if(event.key==='Enter') triggerSmartAISearch()" placeholder="搜尋記憶或問問 AI..." class="w-full bg-white border border-slate-200 rounded-2xl pl-10 pr-20 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent shadow-xs transition">
       <div class="absolute left-3.5 top-3.5 text-slate-400">
@@ -85,7 +81,7 @@
       </button>
     </div>
 
-    <!-- AI 直接回答卡片區 -->
+    <!-- AI 回答卡片 -->
     <div id="aiDirectAnswerWrapper" class="hidden bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl p-3.5 shadow-xs transition">
       <div class="flex items-start gap-2">
         <div class="text-brand text-sm mt-0.5"><i class="fa-solid fa-sparkles"></i></div>
@@ -96,13 +92,13 @@
       </div>
     </div>
 
-    <!-- 添加記憶主按鈕 -->
-    <button onclick="openAddModal()" class="w-full bg-brand hover:bg-brand-dark active:scale-[0.99] text-white py-3.5 rounded-2xl font-semibold text-base shadow-sm flex items-center justify-center gap-2 transition">
+    <!-- 添加記憶按鈕（恢復清新淺綠色風格） -->
+    <button onclick="openAddModal()" class="w-full bg-emerald-500 hover:bg-emerald-600 active:scale-[0.99] text-white py-3.5 rounded-2xl font-semibold text-base shadow-sm flex items-center justify-center gap-2 transition">
       <i class="fa-solid fa-plus text-sm"></i>
       <span>添加記憶</span>
     </button>
 
-    <!-- 未分類橫幅 -->
+    <!-- 未分類提醒橫幅 -->
     <div id="unclassifiedBanner" class="bg-brand-accent border border-brand-borderOrange rounded-2xl p-3.5 flex items-start justify-between gap-2 shadow-xs cursor-pointer" onclick="filterByCategory('未分類')">
       <div class="flex items-start gap-2.5">
         <div class="text-brand-orangeText text-lg mt-0.5">
@@ -116,11 +112,11 @@
       <span class="text-xs text-brand-orangeText font-medium whitespace-nowrap mt-0.5 flex items-center gap-1">整理 <i class="fa-solid fa-arrow-right text-[10px]"></i></span>
     </div>
 
-    <!-- 分類區 -->
+    <!-- 文件分類網格 -->
     <div>
       <div class="flex items-center justify-between text-xs text-slate-500 mb-2.5 font-medium">
         <span class="text-slate-800 font-bold text-sm">文件分類</span>
-        <button onclick="fetchNotesFromDrive()" class="hover:underline flex items-center gap-1 text-[11px]">最近新增 <i class="fa-solid fa-arrow-right text-[9px]"></i></button>
+        <button onclick="fetchNotesFromDrive()" class="hover:underline flex items-center gap-1 text-[11px]">重新載入 <i class="fa-solid fa-arrow-right text-[9px]"></i></button>
       </div>
       <div class="grid grid-cols-2 gap-2.5" id="categoryGrid">
         <div onclick="filterByCategory('財務')" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
@@ -167,15 +163,14 @@
         </div>
       </div>
     </div>
-    <!-- 筆記卡片清單列表區 -->
+
+    <!-- 記憶清單列表 -->
     <div id="notesSection" class="pt-2">
       <div class="flex items-center justify-between mb-2">
         <h3 id="currentFilterTitle" class="text-sm font-bold text-slate-800">全部記憶</h3>
         <button onclick="showAllNotes()" class="text-xs text-brand hover:underline font-medium">重設篩選</button>
       </div>
-      <div id="notesList" class="space-y-2.5">
-        <!-- 動態渲染卡片 -->
-      </div>
+      <div id="notesList" class="space-y-2.5"></div>
       <div id="emptyNotesState" class="hidden text-center py-10 bg-white rounded-2xl border border-slate-200/80">
         <i class="fa-regular fa-folder-open text-3xl text-slate-300 mb-2"></i>
         <p class="text-xs text-slate-400 font-medium">尚無相符的記憶內容</p>
@@ -184,8 +179,8 @@
 
   </main>
 
-  <!-- 彈窗：新增/編輯記憶 Modal -->
-  <div id="noteModal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 transition-opacity">
+  <!-- 彈窗：新增/編輯記憶 -->
+  <div id="noteModal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
     <div class="bg-white w-full sm:max-w-lg max-h-[90vh] rounded-t-3xl sm:rounded-3xl p-5 overflow-y-auto flex flex-col gap-4 shadow-xl">
       <div class="flex items-center justify-between border-b pb-3">
         <h3 id="modalTitle" class="text-base font-bold text-slate-800">新增記憶</h3>
@@ -224,13 +219,13 @@
       </div>
 
       <div class="flex items-center gap-2 pt-2 border-t mt-1">
-        <button onclick="saveNote()" class="flex-1 bg-brand hover:bg-brand-dark text-white py-2.5 rounded-xl font-medium text-sm transition">儲存</button>
+        <button onclick="saveNote()" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-2.5 rounded-xl font-medium text-sm transition">儲存</button>
         <button onclick="closeNoteModal()" class="px-4 py-2.5 border border-slate-200 rounded-xl text-slate-600 font-medium text-sm hover:bg-slate-50 transition">取消</button>
       </div>
     </div>
   </div>
 
-  <!-- 彈窗：系統設定 Modal (API Key & WebApp URL) -->
+  <!-- 彈窗：設定 Modal -->
   <div id="configModal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
     <div class="bg-white w-full max-w-sm rounded-3xl p-5 shadow-xl space-y-4">
       <div class="flex items-center justify-between border-b pb-2">
@@ -244,7 +239,7 @@
         </div>
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1">Gemini API Key</label>
-          <input type="password" id="cfgGeminiKey" placeholder="貼上 AI Studio 取得的 API Key" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-brand">
+          <input type="password" id="cfgGeminiKey" placeholder="貼上 AI Studio API Key" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-brand">
         </div>
       </div>
       <button onclick="saveConfig()" class="w-full bg-brand text-white py-2.5 rounded-xl font-medium text-xs hover:bg-brand-dark transition">保存設定</button>
@@ -252,11 +247,9 @@
   </div>
 
   <script>
-    // 全域變數與儲存容器
     let allNotes = [];
     let currentEditId = null;
 
-    // 初始化與字體設定（預設為 xl，支援 xl, 2xl, 3xl）
     window.addEventListener('DOMContentLoaded', () => {
       const savedFontSize = localStorage.getItem('MEMOBOX_FONT_SIZE') || 'xl';
       setFontSize(savedFontSize);
@@ -266,7 +259,7 @@
 
     function setFontSize(size) {
       const htmlEl = document.documentElement;
-      htmlEl.classList.remove('font-size-md', 'font-size-lg', 'font-size-xl', 'font-size-2xl', 'font-size-3xl');
+      htmlEl.classList.remove('font-size-xl', 'font-size-2xl', 'font-size-3xl');
       htmlEl.classList.add(`font-size-${size}`);
       localStorage.setItem('MEMOBOX_FONT_SIZE', size);
       updateFontSizeButtonStyles(size);
@@ -302,27 +295,34 @@
     }
 
     function saveConfig() {
-      localStorage.setItem('MEMOBOX_GAS_URL', document.getElementById('cfgGasUrl').value.trim());
-      localStorage.setItem('MEMOBOX_GEMINI_KEY', document.getElementById('cfgGeminiKey').value.trim());
+      const gasUrl = document.getElementById('cfgGasUrl').value.trim();
+      const apiKey = document.getElementById('cfgGeminiKey').value.trim();
+      
+      if (gasUrl) localStorage.setItem('MEMOBOX_GAS_URL', gasUrl);
+      if (apiKey) localStorage.setItem('MEMOBOX_GEMINI_KEY', apiKey);
+      
       closeConfigModal();
-      alert('設定已儲存！');
+      // 保持目前載入的資料，不重新清空，僅嘗試後台拉取最新
       fetchNotesFromDrive();
     }
-    // 本地快取載入
+
     function loadLocalNotes() {
       try {
-        const raw = localStorage.getItem('MEMOBOX_LOCAL_DATA');
+        const raw = localStorage.getItem('MEMOBOX_LOCAL_DATA') || localStorage.getItem('SAVED_MEMORIES');
         if (raw) {
-          allNotes = JSON.parse(raw);
-          updateCategoryCounts();
-          renderNotesList(allNotes);
+          const parsed = JSON.parse(raw);
+          const list = Array.isArray(parsed) ? parsed : (parsed.data || parsed.notes || []);
+          if (Array.isArray(list) && list.length > 0) {
+            allNotes = list;
+            updateCategoryCounts();
+            renderNotesList(allNotes);
+          }
         }
       } catch (e) {
         console.error('本地讀取失敗:', e);
       }
     }
 
-    // Google Apps Script 資料同步
     async function fetchNotesFromDrive() {
       const url = localStorage.getItem('MEMOBOX_GAS_URL');
       if (!url) return;
@@ -331,12 +331,23 @@
       if (syncBtn) syncBtn.classList.add('animate-spin');
 
       try {
-        const res = await fetch(url + '?action=getNotes');
+        const reqUrl = url.includes('?') ? `${url}&action=getNotes` : `${url}?action=getNotes`;
+        const res = await fetch(reqUrl);
         if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data)) {
-            allNotes = data;
-            localStorage.setItem('MEMOBOX_LOCAL_DATA', JSON.stringify(data));
+          const result = await res.json();
+          let list = [];
+          if (Array.isArray(result)) {
+            list = result;
+          } else if (result && Array.isArray(result.data)) {
+            list = result.data;
+          } else if (result && Array.isArray(result.notes)) {
+            list = result.notes;
+          }
+
+          if (list.length > 0) {
+            allNotes = list;
+            localStorage.setItem('MEMOBOX_LOCAL_DATA', JSON.stringify(allNotes));
+            localStorage.setItem('SAVED_MEMORIES', JSON.stringify(allNotes));
             updateCategoryCounts();
             renderNotesList(allNotes);
           }
@@ -352,7 +363,6 @@
       fetchNotesFromDrive();
     }
 
-    // 更新各分類計數
     function updateCategoryCounts() {
       const categories = ['財務', '工作', '旅行', '醫療健康', '證件', '家庭生活'];
       let unclassified = 0;
@@ -375,7 +385,6 @@
       });
     }
 
-    // 渲染卡片清單
     function renderNotesList(list) {
       const container = document.getElementById('notesList');
       const emptyState = document.getElementById('emptyNotesState');
@@ -423,7 +432,6 @@
       renderNotesList(allNotes);
     }
 
-    // Modal 新增與編輯
     function openAddModal() {
       currentEditId = null;
       document.getElementById('modalTitle').innerText = '新增記憶';
@@ -450,7 +458,7 @@
       document.getElementById('noteModal').classList.add('hidden');
     }
 
-    function saveNote() {
+    async function saveNote() {
       const title = document.getElementById('formTitle').value.trim();
       const category = document.getElementById('formCategory').value;
       const content = document.getElementById('formContent').value.trim();
@@ -462,6 +470,7 @@
         return;
       }
 
+      let targetNote;
       if (currentEditId) {
         const idx = allNotes.findIndex(n => String(n['ID']) === String(currentEditId));
         if (idx !== -1) {
@@ -471,9 +480,10 @@
           allNotes[idx]['摘要'] = content.slice(0, 50);
           allNotes[idx]['待辦清單'] = todo;
           allNotes[idx]['提醒日期'] = reminder;
+          targetNote = allNotes[idx];
         }
       } else {
-        const newNote = {
+        targetNote = {
           'ID': 'N_' + Date.now(),
           '標題': title || '新筆記',
           '分類': category,
@@ -482,16 +492,31 @@
           '待辦清單': todo,
           '提醒日期': reminder
         };
-        allNotes.unshift(newNote);
+        allNotes.unshift(targetNote);
       }
 
       localStorage.setItem('MEMOBOX_LOCAL_DATA', JSON.stringify(allNotes));
+      localStorage.setItem('SAVED_MEMORIES', JSON.stringify(allNotes));
       updateCategoryCounts();
       renderNotesList(allNotes);
       closeNoteModal();
+
+      // 非同步推送到 Google 試算表
+      const gasUrl = localStorage.getItem('MEMOBOX_GAS_URL');
+      if (gasUrl && targetNote) {
+        try {
+          fetch(gasUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(targetNote)
+          });
+        } catch (e) {
+          console.warn('雲端儲存略過:', e);
+        }
+      }
     }
 
-    // 強化版語意搜尋（自動降級，避免出錯中斷）
     async function triggerSmartAISearch(customQuery) {
       const q = (customQuery || document.getElementById('aiSearchInput').value || '').trim();
       if (!q) {

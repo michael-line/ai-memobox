@@ -1260,7 +1260,7 @@ async function exportDataAsPDF() {
 
     for (let idx = 0; idx < allNotes.length; idx++) {
       const n = allNotes[idx];
-      const rawPhotoUrl = n['圖片'] || n['相片'] || n['照片'] || n['image'] || n['imageUrl'] || n['圖片網址'] || n['Photo'] || '';
+      const rawPhotoUrl = n['附件連結'] ||n['圖片'] || n['相片'] || n['照片'] || n['image'] || n['imageUrl'] || n['圖片網址'] || n['Photo'] || '';
       
       let imgHtml = '';
       if (rawPhotoUrl) {

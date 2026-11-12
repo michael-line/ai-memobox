@@ -235,6 +235,10 @@
       </div>
 
       <div id="cardsWrapper" class="space-y-3"></div>
+      
+      <!-- 分頁按鈕容器 -->
+      <div id="paginationControls" class="flex items-center justify-center gap-1.5 pt-4 pb-2 flex-wrap"></div>
+    </div>
     </div>
 
   </main>
@@ -906,22 +910,67 @@ document.getElementById('preTitleInput').value = "";
       }
     }
 
-    async function fetchNotesFromDrive() {
-      const gasUrl = localStorage.getItem('MEMOBOX_GAS_URL');
-      if (!gasUrl) return;
+    let currentPage = 1;
+  const PAGE_LIMIT = 10;
 
-      try {
-        const res = await fetch(gasUrl);
-        const json = await res.json();
-        if (json.status === "success") {
-          allNotes = json.data || [];
-          updateDashboard();
-          renderNotesList(allNotes);
-        }
-      } catch (err) {
-        console.error("同步失敗：", err);
+  async function fetchNotesFromDrive(page = 1) {
+    currentPage = page;
+    const gasUrl = localStorage.getItem('MEMOBOX_GAS_URL');
+    if (!gasUrl) return;
+
+    try {
+      // 1. 抓取指定頁數的 10 筆記憶卡片（加速首頁卡片渲染）
+      const separator = gasUrl.includes('?') ? '&' : '?';
+      const pagedUrl = `${gasUrl}${separator}page=${currentPage}&limit=${PAGE_LIMIT}`;
+      const res = await fetch(pagedUrl);
+      const json = await res.json();
+
+      if (json.status === "success") {
+        const pagedNotes = json.data || [];
+        renderNotesList(pagedNotes);
+        renderPagination(json.pagination);
+        
+        // 同步更新儀表板統計（確保分類計數與任務提醒正常運作）
+        allNotes = pagedNotes;
+        updateDashboard();
       }
+    } catch (err) {
+      console.error("同步失敗：", err);
     }
+  }
+
+  function renderPagination(pagination) {
+    const container = document.getElementById('paginationControls');
+    if (!container || !pagination || pagination.totalPages <= 1) {
+      if (container) container.innerHTML = '';
+      return;
+    }
+
+    const { page, totalPages } = pagination;
+    let html = '';
+
+    // 上一頁
+    html += `<button onclick="changePage(${page - 1})" ${page === 1 ? 'disabled' : ''} class="px-2.5 py-1 text-xs rounded-lg border border-slate-200 bg-white text-slate-600 disabled:opacity-40 hover:bg-slate-50">上一頁</button>`;
+
+    // 頁碼按鈕（1, 2, 3...）
+    for (let i = 1; i <= totalPages; i++) {
+      const activeClass = i === page
+        ? 'bg-brand text-white font-bold border-brand'
+        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50';
+      html += `<button onclick="changePage(${i})" class="px-2.5 py-1 text-xs rounded-lg border ${activeClass}">${i}</button>`;
+    }
+
+    // 下一頁
+    html += `<button onclick="changePage(${page + 1})" ${page === totalPages ? 'disabled' : ''} class="px-2.5 py-1 text-xs rounded-lg border border-slate-200 bg-white text-slate-600 disabled:opacity-40 hover:bg-slate-50">下一頁</button>`;
+
+    container.innerHTML = html;
+  }
+
+  function changePage(newPage) {
+    fetchNotesFromDrive(newPage);
+    const wrapper = document.getElementById('cardsWrapper');
+    if (wrapper) wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 
     function updateDashboard() {
       const counts = {};

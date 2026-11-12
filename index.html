@@ -282,7 +282,21 @@
         <h3 class="text-sm font-bold text-slate-900">隨手記 / 丟入記憶</h3>
         <button onclick="closeAddModal()" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
       </div>
-
+<div class="flex gap-2">
+        <input type="text" id="preTitleInput" placeholder="自訂標題（留空由 AI 產生）" class="flex-1 min-w-0 text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-brand">
+        <select id="preCategorySelect" class="w-32 text-sm bg-slate-50 border border-slate-200 rounded-xl px-2 py-2 outline-none focus:border-brand text-slate-700">
+          <option value="">✨ AI 分類</option>
+          <option value="知識學習">知識學習</option>
+          <option value="工作參考">工作參考</option>
+          <option value="修練成長">修練成長</option>
+          <option value="文資證明">文資證明</option>
+          <option value="課題準備">課題準備</option>
+          <option value="家庭生活">家庭生活</option>
+          <option value="經濟財務">經濟財務</option>
+          <option value="健康休閒">健康休閒</option>
+          <option value="未分類">未分類</option>
+        </select>
+      </div>
       <textarea id="modalInput" rows="4" placeholder="貼上文字、對話、網址，或按下方拍照/語音..." class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl p-3 outline-none focus:border-brand"></textarea>
 
       <div id="modalFilePreview" class="hidden text-xs bg-slate-100 p-2 rounded-lg flex items-center justify-between">

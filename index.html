@@ -118,75 +118,84 @@
         </button>
       </div>
 
-      <div class="grid grid-cols-2 gap-2.5" id="categoryGrid">
-        <div onclick="filterByCategory('財務')" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
-          <div class="text-2xl">💰</div>
-          <div>
-            <div class="text-xs font-bold text-slate-800">財務</div>
-            <div class="text-[11px] text-slate-400 font-normal"><span id="count-財務">0</span> 筆</div>
-          </div>
-        </div>
-        <div onclick="filterByCategory('工作')" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
-          <div class="text-2xl">💼</div>
-          <div>
-            <div class="text-xs font-bold text-slate-800">工作</div>
-            <div class="text-[11px] text-slate-400 font-normal"><span id="count-工作">0</span> 筆</div>
-          </div>
-        </div>
-        <div onclick="filterByCategory('旅行')" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
-          <div class="text-2xl">✈️</div>
-          <div>
-            <div class="text-xs font-bold text-slate-800">旅行</div>
-            <div class="text-[11px] text-slate-400 font-normal"><span id="count-旅行">0</span> 筆</div>
-          </div>
-        </div>
-        <div onclick="filterByCategory('醫療健康')" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
-          <div class="text-2xl">🏥</div>
-          <div>
-            <div class="text-xs font-bold text-slate-800">醫療健康</div>
-            <div class="text-[11px] text-slate-400 font-normal"><span id="count-醫療健康">0</span> 筆</div>
-          </div>
-        </div>
-        <div onclick="filterByCategory('證件')" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
-          <div class="text-2xl">🪪</div>
-          <div>
-            <div class="text-xs font-bold text-slate-800">證件</div>
-            <div class="text-[11px] text-slate-400 font-normal"><span id="count-證件">0</span> 筆</div>
-          </div>
-        </div>
-        <div onclick="filterByCategory('家庭生活')" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
-          <div class="text-2xl">🏡</div>
-          <div>
-            <div class="text-xs font-bold text-slate-800">家庭生活</div>
-            <div class="text-[11px] text-slate-400 font-normal"><span id="count-家庭生活">0</span> 筆</div>
-          </div>
-        </div>
-        <div onclick="filterByCategory('購物')" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
-          <div class="text-2xl">🛒</div>
-          <div>
-            <div class="text-xs font-bold text-slate-800">購物</div>
-            <div class="text-[11px] text-slate-400 font-normal"><span id="count-購物">0</span> 筆</div>
-          </div>
-        </div>
-        <div onclick="filterByCategory('學習')" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
-          <div class="text-2xl">📚</div>
-          <div>
-            <div class="text-xs font-bold text-slate-800">學習</div>
-            <div class="text-[11px] text-slate-400 font-normal"><span id="count-學習">0</span> 筆</div>
-          </div>
-        </div>
-        <div onclick="filterByCategory('未分類')" class="bg-[#FFFDFB] p-3.5 rounded-2xl border border-dashed border-brand-borderOrange shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
-          <div class="text-2xl">📂</div>
-          <div>
-            <div class="text-xs font-bold text-brand-orangeText">未分類</div>
-            <div class="text-[11px] text-brand-orangeText/70"><span id="count-未分類">0</span> 筆待整理</div>
-          </div>
-        </div>
-        <div onclick="showAllNotes()" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
-          <div class="text-lg text-slate-500 pl-1">⚙️</div>
-          <div class="text-xs font-bold text-slate-700">檢視全部記憶</div>
+     <div class="grid grid-cols-2 gap-2.5" id="categoryGrid">
+      <div onclick="filterByCategory('知識學習')" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
+        <div class="text-2xl">📚</div>
+        <div>
+          <div class="text-xs font-bold text-slate-800">知識學習</div>
+          <div class="text-[11px] text-slate-400 font-normal"><span id="count-知識學習">0</span> 筆</div>
         </div>
       </div>
+
+      <div onclick="filterByCategory('工作參考')" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
+        <div class="text-2xl">💼</div>
+        <div>
+          <div class="text-xs font-bold text-slate-800">工作參考</div>
+          <div class="text-[11px] text-slate-400 font-normal"><span id="count-工作參考">0</span> 筆</div>
+        </div>
+      </div>
+
+      <div onclick="filterByCategory('修練成長')" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
+        <div class="text-2xl">🌱</div>
+        <div>
+          <div class="text-xs font-bold text-slate-800">修練成長</div>
+          <div class="text-[11px] text-slate-400 font-normal"><span id="count-修練成長">0</span> 筆</div>
+        </div>
+      </div>
+
+      <div onclick="filterByCategory('文資證明')" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
+        <div class="text-2xl">🪪</div>
+        <div>
+          <div class="text-xs font-bold text-slate-800">文資證明</div>
+          <div class="text-[11px] text-slate-400 font-normal"><span id="count-文資證明">0</span> 筆</div>
+        </div>
+      </div>
+
+      <div onclick="filterByCategory('課題準備')" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
+        <div class="text-2xl">📝</div>
+        <div>
+          <div class="text-xs font-bold text-slate-800">課題準備</div>
+          <div class="text-[11px] text-slate-400 font-normal"><span id="count-課題準備">0</span> 筆</div>
+        </div>
+      </div>
+
+      <div onclick="filterByCategory('家庭生活')" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
+        <div class="text-2xl">🏡</div>
+        <div>
+          <div class="text-xs font-bold text-slate-800">家庭生活</div>
+          <div class="text-[11px] text-slate-400 font-normal"><span id="count-家庭生活">0</span> 筆</div>
+        </div>
+      </div>
+
+      <div onclick="filterByCategory('經濟財務')" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
+        <div class="text-2xl">💰</div>
+        <div>
+          <div class="text-xs font-bold text-slate-800">經濟財務</div>
+          <div class="text-[11px] text-slate-400 font-normal"><span id="count-經濟財務">0</span> 筆</div>
+        </div>
+      </div>
+
+      <div onclick="filterByCategory('健康休閒')" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
+        <div class="text-2xl">🌿</div>
+        <div>
+          <div class="text-xs font-bold text-slate-800">健康休閒</div>
+          <div class="text-[11px] text-slate-400 font-normal"><span id="count-健康休閒">0</span> 筆</div>
+        </div>
+      </div>
+
+      <div onclick="filterByCategory('未分類')" class="bg-[#FFFDFB] p-3.5 rounded-2xl border border-dashed border-brand-borderOrange shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
+        <div class="text-2xl">📂</div>
+        <div>
+          <div class="text-xs font-bold text-brand-orangeText">未分類</div>
+          <div class="text-[11px] text-brand-orangeText/70"><span id="count-未分類">0</span> 筆待整理</div>
+        </div>
+      </div>
+
+      <div onclick="showAllNotes()" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
+        <div class="text-lg text-slate-500 pl-1">⚙️</div>
+        <div class="text-xs font-bold text-slate-700">檢視全部記憶</div>
+      </div>
+    </div>
     </div>
 
     <!-- 即將到來 -->
@@ -349,16 +358,16 @@
         <div>
           <label class="block text-[11px] font-bold text-slate-500 mb-1">分類</label>
           <select id="prevCategory" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand">
-            <option value="財務">💰 財務</option>
-            <option value="工作">💼 工作</option>
-            <option value="旅行">✈️ 旅行</option>
-            <option value="醫療健康">🏥 醫療健康</option>
-            <option value="證件">🪪 證件</option>
-            <option value="家庭生活">🏡 家庭生活</option>
-            <option value="購物">🛒 購物</option>
-            <option value="學習">📚 學習</option>
-            <option value="未分類">📂 未分類</option>
-          </select>
+          <option value="知識學習">📚 知識學習</option>
+          <option value="工作參考">💼 工作參考</option>
+          <option value="修練成長">🌱 修練成長</option>
+          <option value="文資證明">🪪 文資證明</option>
+          <option value="課題準備">📝 課題準備</option>
+          <option value="家庭生活">🏡 家庭生活</option>
+          <option value="經濟財務">💰 經濟財務</option>
+          <option value="健康休閒">🌿 健康休閒</option>
+          <option value="未分類">📂 未分類</option>
+        </select>
         </div>
         <div>
           <label class="block text-[11px] font-bold text-slate-500 mb-1">提醒日期（有填才列首頁任務）</label>
@@ -433,16 +442,16 @@
         <div>
           <label class="block text-[11px] font-bold text-slate-500 mb-1">分類</label>
           <select id="editDetailCategory" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand">
-            <option value="財務">💰 財務</option>
-            <option value="工作">💼 工作</option>
-            <option value="旅行">✈️ 旅行</option>
-            <option value="醫療健康">🏥 醫療健康</option>
-            <option value="證件">🪪 證件</option>
-            <option value="家庭生活">🏡 家庭生活</option>
-            <option value="購物">🛒 購物</option>
-            <option value="學習">📚 學習</option>
-            <option value="未分類">📂 未分類</option>
-          </select>
+          <option value="知識學習">📚 知識學習</option>
+          <option value="工作參考">💼 工作參考</option>
+          <option value="修練成長">🌱 修練成長</option>
+          <option value="文資證明">🪪 文資證明</option>
+          <option value="課題準備">📝 課題準備</option>
+          <option value="家庭生活">🏡 家庭生活</option>
+          <option value="經濟財務">💰 經濟財務</option>
+          <option value="健康休閒">🌿 健康休閒</option>
+          <option value="未分類">📂 未分類</option>
+        </select>
         </div>
         <div>
           <label class="block text-[11px] font-bold text-slate-500 mb-1">提醒日期</label>
@@ -559,7 +568,7 @@
     let currentDisplayList = [];
     let isSavingLock = false;
 
-    const CATEGORIES = ["財務", "工作", "旅行", "醫療健康", "證件", "家庭生活", "購物", "學習", "未分類"];
+    const CATEGORIES = ["知識學習", "工作參考", "修練成長", "文資證明", "課題準備", "家庭生活", "經濟財務", "健康休閒", "未分類"];
 
     function setFontSize(size) {
       const htmlEl = document.documentElement;

@@ -1,1412 +1,1488 @@
 <!DOCTYPE html>
 <html lang="zh-TW" class="font-size-lg">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI 記憶夾</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            DEFAULT: '#388E6C',
-                            dark: '#2B6F54',
-                            light: '#E8F5E9',
-                            accent: '#FDF3E7',
-                            borderOrange: '#FCD8B8',
-                            orangeText: '#D97736'
-                        }
-                    }
-                }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>AI 記憶夾</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              DEFAULT: '#388E6C',
+              dark: '#2B6F54',
+              light: '#E8F5E9',
+              accent: '#FDF3E7',
+              borderOrange: '#FCD8B8',
+              orangeText: '#D97736'
             }
+          }
         }
-    </script>
-    <style>
-        body {
-            -webkit-tap-highlight-color: transparent;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            transition: font-size 0.2s ease;
-        }
-        .pb-safe { padding-bottom: calc(85px + env(safe-area-inset-bottom, 0px)); }
-        html.font-size-md { font-size: 15px; }
-        html.font-size-lg { font-size: 17px; }
-        html.font-size-xl { font-size: 19px; }
-        .modal-layer { z-index: 99999 !important; }
-    </style>
+      }
+    }
+  </script>
+  <style>
+    body {
+      -webkit-tap-highlight-color: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      transition: font-size 0.2s ease;
+    }
+    .pb-safe {
+      padding-bottom: calc(85px + env(safe-area-inset-bottom, 0px));
+    }
+    html.font-size-md { font-size: 15px; }
+    html.font-size-lg { font-size: 17px; }
+    html.font-size-xl { font-size: 19px; }
+    
+    .modal-layer {
+      z-index: 99999 !important;
+    }
+  </style>
 </head>
 <body class="bg-[#F8FAF9] text-slate-800 antialiased min-h-screen">
 
-    <header class="sticky top-0 z-30 bg-[#F8FAF9]/90 backdrop-blur-md px-5 py-3.5 flex items-center justify-between">
-        <div class="flex items-center space-x-2">
-            <div class="w-8 h-8 rounded-full bg-brand flex items-center justify-center text-white text-base">
-                <i class="fa-solid fa-shapes"></i>
-            </div>
-            <span class="text-xl font-bold tracking-tight text-slate-900">AI 記憶夾</span>
+  <header class="sticky top-0 z-30 bg-[#F8FAF9]/90 backdrop-blur-md px-5 py-3.5 flex items-center justify-between">
+    <div class="flex items-center space-x-2">
+      <div class="w-8 h-8 rounded-full bg-brand flex items-center justify-center text-white text-base">
+        <i class="fa-solid fa-shapes"></i>
+      </div>
+      <span class="text-xl font-bold tracking-tight text-slate-900">AI 記憶夾</span>
+    </div>
+
+    <div class="flex items-center space-x-2 text-slate-600">
+      <div class="flex items-center bg-white border border-slate-200/90 rounded-xl px-1.5 py-0.5 shadow-xs">
+        <button onclick="setFontSize('md')" id="btnFontMd" title="標準字體" class="text-xs font-bold px-2 py-1 rounded-lg text-slate-500 hover:text-brand transition">A</button>
+        <button onclick="setFontSize('lg')" id="btnFontLg" title="大字體" class="text-sm font-bold px-2 py-1 rounded-lg text-slate-500 hover:text-brand transition">A+</button>
+        <button onclick="setFontSize('xl')" id="btnFontXl" title="特大字體" class="text-base font-bold px-2 py-1 rounded-lg text-slate-500 hover:text-brand transition">A++</button>
+      </div>
+
+      <button onclick="toggleConfigModal()" title="設定與資料備份" class="hover:text-brand transition text-base p-1.5">
+        <i class="fa-solid fa-gear"></i>
+      </button>
+    </div>
+  </header>
+
+  <main class="max-w-md mx-auto px-5 pt-2 pb-safe space-y-5">
+
+    <div>
+      <h2 class="text-2xl font-bold text-slate-900 flex items-center gap-1.5">
+        <span id="greetingText">晚安</span>，<span id="userNameDisplay">我的朋友</span>
+      </h2>
+      <p class="text-xs text-slate-500 mt-1">看到有用的東西，先丟進來；之後用一句話找回。</p>
+    </div>
+
+    <!-- 頂部快速搜尋列 -->
+    <div class="relative bg-white rounded-2xl shadow-sm border border-slate-200/80 p-1.5 flex items-center">
+      <div class="pl-3 pr-2 text-brand text-lg">
+        <i class="fa-solid fa-wand-magic-sparkles"></i>
+      </div>
+      <input type="text" id="aiSearchInput" onkeydown="handleSearchKey(event)" placeholder="問 AI 找資料，例如「下週車輛保養」" class="w-full text-xs text-slate-700 placeholder-slate-400 bg-transparent outline-none">
+      <button onclick="triggerSmartAISearch()" class="bg-brand hover:bg-brand-dark text-white rounded-xl w-8 h-8 flex items-center justify-center shrink-0 transition">
+        <i class="fa-solid fa-magnifying-glass text-xs"></i>
+      </button>
+    </div>
+
+    <button onclick="openAddModal()" class="w-full bg-brand hover:bg-brand-dark active:scale-[0.99] text-white py-3.5 rounded-2xl font-semibold text-base shadow-sm flex items-center justify-center gap-2 transition">
+      <i class="fa-solid fa-plus text-sm"></i>
+      <span>添加記憶</span>
+    </button>
+
+    <!-- 未分類橫幅 -->
+    <div id="unclassifiedBanner" class="bg-brand-accent border border-brand-borderOrange rounded-2xl p-3.5 flex items-start justify-between gap-2 shadow-xs cursor-pointer" onclick="filterByCategory('未分類')">
+      <div class="flex items-start gap-2.5">
+        <div class="text-brand-orangeText text-lg mt-0.5">
+          <i class="fa-regular fa-folder-open"></i>
         </div>
+        <div>
+          <h4 class="text-xs font-semibold text-brand-orangeText">
+            有 <span id="unclassifiedCount">0</span> 筆資料還沒分類，點一下就能歸好
+          </h4>
+          <p class="text-[11px] text-brand-orangeText/80 mt-0.5">（點開卡片即可隨時修改所有內容）</p>
+        </div>
+      </div>
+      <span class="text-xs text-brand-orangeText font-medium whitespace-nowrap mt-0.5 flex items-center gap-1">
+        整理 <i class="fa-solid fa-arrow-right text-[10px]"></i>
+      </span>
+    </div>
+
+    <!-- 分類區 -->
+    <div>
+      <div class="flex items-center justify-between text-xs text-slate-500 mb-2.5 font-medium">
+        <span class="text-slate-800 font-bold text-sm">文件分類</span>
+        <button onclick="fetchNotesFromDrive()" class="hover:underline flex items-center gap-1 text-[11px]">
+          最近新增 <i class="fa-solid fa-arrow-right text-[9px]"></i>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2.5" id="categoryGrid">
+        <div onclick="filterByCategory('財務')" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
+          <div class="text-2xl">💰</div>
+          <div>
+            <div class="text-xs font-bold text-slate-800">財務</div>
+            <div class="text-[11px] text-slate-400 font-normal"><span id="count-財務">0</span> 筆</div>
+          </div>
+        </div>
+        <div onclick="filterByCategory('工作')" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
+          <div class="text-2xl">💼</div>
+          <div>
+            <div class="text-xs font-bold text-slate-800">工作</div>
+            <div class="text-[11px] text-slate-400 font-normal"><span id="count-工作">0</span> 筆</div>
+          </div>
+        </div>
+        <div onclick="filterByCategory('旅行')" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
+          <div class="text-2xl">✈️</div>
+          <div>
+            <div class="text-xs font-bold text-slate-800">旅行</div>
+            <div class="text-[11px] text-slate-400 font-normal"><span id="count-旅行">0</span> 筆</div>
+          </div>
+        </div>
+        <div onclick="filterByCategory('醫療健康')" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
+          <div class="text-2xl">🏥</div>
+          <div>
+            <div class="text-xs font-bold text-slate-800">醫療健康</div>
+            <div class="text-[11px] text-slate-400 font-normal"><span id="count-醫療健康">0</span> 筆</div>
+          </div>
+        </div>
+        <div onclick="filterByCategory('證件')" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
+          <div class="text-2xl">🪪</div>
+          <div>
+            <div class="text-xs font-bold text-slate-800">證件</div>
+            <div class="text-[11px] text-slate-400 font-normal"><span id="count-證件">0</span> 筆</div>
+          </div>
+        </div>
+        <div onclick="filterByCategory('家庭生活')" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
+          <div class="text-2xl">🏡</div>
+          <div>
+            <div class="text-xs font-bold text-slate-800">家庭生活</div>
+            <div class="text-[11px] text-slate-400 font-normal"><span id="count-家庭生活">0</span> 筆</div>
+          </div>
+        </div>
+        <div onclick="filterByCategory('購物')" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
+          <div class="text-2xl">🛒</div>
+          <div>
+            <div class="text-xs font-bold text-slate-800">購物</div>
+            <div class="text-[11px] text-slate-400 font-normal"><span id="count-購物">0</span> 筆</div>
+          </div>
+        </div>
+        <div onclick="filterByCategory('學習')" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
+          <div class="text-2xl">📚</div>
+          <div>
+            <div class="text-xs font-bold text-slate-800">學習</div>
+            <div class="text-[11px] text-slate-400 font-normal"><span id="count-學習">0</span> 筆</div>
+          </div>
+        </div>
+        <div onclick="filterByCategory('未分類')" class="bg-[#FFFDFB] p-3.5 rounded-2xl border border-dashed border-brand-borderOrange shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
+          <div class="text-2xl">📂</div>
+          <div>
+            <div class="text-xs font-bold text-brand-orangeText">未分類</div>
+            <div class="text-[11px] text-brand-orangeText/70"><span id="count-未分類">0</span> 筆待整理</div>
+          </div>
+        </div>
+        <div onclick="showAllNotes()" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
+          <div class="text-lg text-slate-500 pl-1">⚙️</div>
+          <div class="text-xs font-bold text-slate-700">檢視全部記憶</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 即將到來 -->
+    <div>
+      <div class="flex items-center justify-between text-xs text-slate-500 mb-2 font-medium">
+        <span class="text-slate-800 font-bold text-sm">即將到來</span>
+        <button onclick="filterByReminders()" class="hover:underline flex items-center gap-1 text-[11px]">全部 <i class="fa-solid fa-arrow-right text-[9px]"></i></button>
+      </div>
+      <div id="reminderContainer" class="space-y-2">
+        <div class="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-xs text-center text-xs text-slate-400">
+          尚無提醒事項
+        </div>
+      </div>
+    </div>
+
+    <!-- 待辦任務清單 -->
+    <div>
+      <div class="text-slate-800 font-bold text-sm mb-2">指派給我的任務</div>
+      <div id="todoContainer" class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs space-y-2 text-xs text-slate-400">
+        沒有待辦任務 🎉
+      </div>
+    </div>
+
+    <!-- 記憶清單展示區 -->
+    <div id="notesSection" class="pt-2">
+      <div id="aiDirectAnswerWrapper" class="hidden mb-4 bg-emerald-50 border border-emerald-200/80 rounded-2xl p-4 space-y-1 shadow-xs">
+        <div class="flex items-center gap-1.5 text-xs font-bold text-brand">
+          <i class="fa-solid fa-sparkles"></i>
+          <span>AI 第二大腦解答：</span>
+        </div>
+        <p id="aiDirectAnswerText" class="text-xs text-emerald-950 leading-relaxed font-medium"></p>
+      </div>
+
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="text-xs font-bold text-slate-700" id="currentFilterTitle">最近新增記憶</h3>
+        <button onclick="fetchNotesFromDrive()" class="text-xs text-brand hover:underline">重新整理</button>
+      </div>
+
+      <div id="cardsWrapper" class="space-y-3"></div>
+    </div>
+
+  </main>
+
+  <!-- 底部導覽列 -->
+  <nav class="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-slate-200 px-6 py-2 flex items-center justify-between z-20 max-w-md mx-auto">
+    <button onclick="showAllNotes()" class="flex flex-col items-center text-brand">
+      <i class="fa-solid fa-house text-lg"></i>
+      <span class="text-[10px] mt-0.5 font-medium">首頁</span>
+    </button>
+    <button onclick="alert('群組功能即將推出')" class="flex flex-col items-center text-slate-400 hover:text-slate-600">
+      <i class="fa-solid fa-user-group text-lg"></i>
+      <span class="text-[10px] mt-0.5">群組</span>
+    </button>
+    
+    <button onclick="openAddModal()" class="w-12 h-12 rounded-full bg-brand hover:bg-brand-dark text-white flex items-center justify-center -mt-5 shadow-lg active:scale-95 transition">
+      <i class="fa-solid fa-plus text-xl"></i>
+    </button>
+
+    <button onclick="openSearchModal()" class="flex flex-col items-center text-slate-400 hover:text-slate-600">
+      <i class="fa-solid fa-wand-magic-sparkles text-lg"></i>
+      <span class="text-[10px] mt-0.5">AI 搜尋</span>
+    </button>
+    <button onclick="filterByReminders()" class="flex flex-col items-center text-slate-400 hover:text-slate-600">
+      <i class="fa-regular fa-bell text-lg"></i>
+      <span class="text-[10px] mt-0.5">提醒</span>
+    </button>
+  </nav>
+
+  <!-- 彈窗：AI 搜尋 -->
+  <div id="searchModal" class="modal-layer fixed inset-0 bg-black/60 backdrop-blur-xs flex items-start justify-center p-4 pt-16 hidden">
+    <div class="bg-white w-full max-w-md rounded-2xl p-5 space-y-4 shadow-xl">
+      <div class="flex items-center justify-between border-b pb-2">
+        <div class="flex items-center gap-2 text-brand font-bold text-sm">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+          <span>問 AI 第二大腦</span>
+        </div>
+        <button onclick="closeSearchModal()" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
+      </div>
+
+      <div class="relative bg-slate-50 rounded-xl border border-slate-200 p-2 flex items-center">
+        <input type="text" id="modalSearchQuery" placeholder="用自然一句話提問，例如「何時要保養車」" class="w-full text-xs text-slate-800 bg-transparent outline-none pr-8" onkeydown="if(event.key==='Enter') executeModalSearch()">
+        <button id="btnExecuteSearch" onclick="executeModalSearch()" class="absolute right-2 bg-brand text-white w-7 h-7 rounded-lg flex items-center justify-center">
+          <i class="fa-solid fa-magnifying-glass text-xs"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 彈窗 1：新增記憶輸入框 -->
+  <div id="addModal" class="modal-layer fixed inset-0 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center hidden">
+    <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-5 space-y-4 shadow-xl">
+      <div class="flex items-center justify-between border-b pb-2">
+        <h3 class="text-sm font-bold text-slate-900">隨手記 / 丟入記憶</h3>
+        <button onclick="closeAddModal()" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
+      </div>
+
+      <textarea id="modalInput" rows="4" placeholder="貼上文字、對話、網址，或按下方拍照/語音..." class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl p-3 outline-none focus:border-brand"></textarea>
+
+      <div id="modalFilePreview" class="hidden text-xs bg-slate-100 p-2 rounded-lg flex items-center justify-between">
+        <span id="modalFileName" class="truncate"></span>
+        <button onclick="clearModalFile()" class="text-red-500 font-bold ml-2">✕</button>
+      </div>
+
+      <div class="flex items-center justify-between pt-1">
         <div class="flex items-center space-x-2 text-slate-600">
-            <div class="flex items-center bg-white border border-slate-200/90 rounded-xl px-1.5 py-0.5 shadow-xs">
-                <button onclick="setFontSize('md')" id="btnFontMd" title="標準字體" class="text-xs font-bold px-2 py-1 rounded-lg text-slate-500 hover:text-brand transition">A</button>
-                <button onclick="setFontSize('lg')" id="btnFontLg" title="大字體" class="text-sm font-bold px-2 py-1 rounded-lg text-slate-500 hover:text-brand transition">A+</button>
-                <button onclick="setFontSize('xl')" id="btnFontXl" title="特大字體" class="text-base font-bold px-2 py-1 rounded-lg text-slate-500 hover:text-brand transition">A++</button>
-            </div>
-            <button onclick="toggleConfigModal()" title="設定與資料備份" class="hover:text-brand transition text-base p-1.5">
-                <i class="fa-solid fa-gear"></i>
+          <button id="modalVoiceBtn" onclick="toggleVoiceInputModal()" title="語音輸入" class="p-2 hover:bg-slate-100 rounded-full text-base">
+            <i class="fa-solid fa-microphone"></i>
+          </button>
+          
+          <label title="開啟相機拍攝" class="p-2 hover:bg-slate-100 rounded-full text-base cursor-pointer text-brand">
+            <i class="fa-solid fa-camera"></i>
+            <input type="file" id="modalCameraInput" accept="image/*" capture="camera" class="hidden" onchange="handleModalFile(event)">
+          </label>
+
+          <label title="從相簿選取" class="p-2 hover:bg-slate-100 rounded-full text-base cursor-pointer">
+            <i class="fa-regular fa-image"></i>
+            <input type="file" id="modalFileInput" accept="image/*,video/*" class="hidden" onchange="handleModalFile(event)">
+          </label>
+        </div>
+
+        <button id="modalAnalyzeBtn" onclick="requestAIPreview()" class="bg-brand hover:bg-brand-dark text-white px-5 py-2.5 rounded-xl font-medium text-xs shadow-sm flex items-center gap-1.5 transition">
+          <i class="fa-solid fa-wand-magic-sparkles text-xs"></i>
+          <span>AI 分析記憶</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 彈窗 2：AI 分析預覽核對面板 -->
+  <div id="previewModal" class="modal-layer fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-md rounded-2xl p-5 space-y-3.5 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b pb-2">
+        <div class="flex items-center gap-1.5 text-brand font-bold text-sm">
+          <i class="fa-solid fa-sparkles"></i>
+          <span>AI 分析預覽核對</span>
+        </div>
+        <button onclick="closePreviewModal()" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
+      </div>
+
+      <div>
+        <label class="block text-[11px] font-bold text-slate-500 mb-1">標題</label>
+        <input type="text" id="prevTitle" class="w-full text-sm font-bold bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand">
+      </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block text-[11px] font-bold text-slate-500 mb-1">分類</label>
+          <select id="prevCategory" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand">
+            <option value="財務">💰 財務</option>
+            <option value="工作">💼 工作</option>
+            <option value="旅行">✈️ 旅行</option>
+            <option value="醫療健康">🏥 醫療健康</option>
+            <option value="證件">🪪 證件</option>
+            <option value="家庭生活">🏡 家庭生活</option>
+            <option value="購物">🛒 購物</option>
+            <option value="學習">📚 學習</option>
+            <option value="未分類">📂 未分類</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-500 mb-1">提醒日期</label>
+          <input type="date" id="prevReminderDate" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-[11px] font-bold text-slate-500 mb-1">一句話重點摘要</label>
+        <textarea id="prevSummary" rows="2" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand"></textarea>
+      </div>
+
+      <div>
+        <label class="block text-[11px] font-bold text-slate-500 mb-1">待辦清單 (每行一項)</label>
+        <textarea id="prevTodos" rows="2" placeholder="無待辦事項" class="w-full text-xs bg-amber-50/60 border border-amber-200 rounded-xl p-2.5 outline-none text-amber-900"></textarea>
+      </div>
+
+      <div>
+        <label class="block text-[11px] font-bold text-slate-500 mb-1">標籤 (逗號分隔)</label>
+        <input type="text" id="prevTags" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand">
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-2 border-t">
+        <button onclick="closePreviewModal()" class="text-xs text-slate-500 px-4 py-2.5 rounded-xl hover:bg-slate-100">
+          返回修改
+        </button>
+        <button id="btnConfirmSave" onclick="confirmSaveToCloud()" class="bg-brand hover:bg-brand-dark text-white text-xs px-5 py-2.5 rounded-xl font-bold shadow-sm transition">
+          確認存入雲端
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 彈窗 3：記憶詳細資訊（含刪除、整合 Google 日曆與 Google 工作） -->
+  <div id="detailModal" class="modal-layer fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-md rounded-2xl p-5 space-y-3.5 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b pb-2">
+        <span class="text-xs text-slate-400 font-medium" id="detailModalHeader">記憶詳細內容</span>
+        <button onclick="closeDetailModal()" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
+      </div>
+
+      <div id="detailImageContainer" class="hidden rounded-xl overflow-hidden border border-slate-200 relative group cursor-pointer" onclick="handlePreviewMediaClick()">
+        <img id="detailImage" src="" alt="附件圖片" class="w-full max-h-52 object-cover">
+        <div id="ytPlayIcon" class="hidden absolute inset-0 bg-black/30 flex items-center justify-center text-white text-4xl">
+          <i class="fa-brands fa-youtube text-red-600 bg-white rounded-2xl px-2 py-1 shadow-lg"></i>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-[11px] font-bold text-slate-500 mb-1">標題</label>
+        <input type="text" id="editDetailTitle" class="w-full text-sm font-bold bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand">
+      </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block text-[11px] font-bold text-slate-500 mb-1">分類</label>
+          <select id="editDetailCategory" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand">
+            <option value="財務">💰 財務</option>
+            <option value="工作">💼 工作</option>
+            <option value="旅行">✈️ 旅行</option>
+            <option value="醫療健康">🏥 醫療健康</option>
+            <option value="證件">🪪 證件</option>
+            <option value="家庭生活">🏡 家庭生活</option>
+            <option value="購物">🛒 購物</option>
+            <option value="學習">📚 學習</option>
+            <option value="未分類">📂 未分類</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-500 mb-1">提醒日期</label>
+          <input type="date" id="editDetailReminderDate" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-[11px] font-bold text-slate-500 mb-1">AI 重點摘要</label>
+        <textarea id="editDetailSummary" rows="2" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand"></textarea>
+      </div>
+
+      <!-- 待辦清單與整合 Google 日曆 / Google 工作按鈕 -->
+      <div class="space-y-1.5">
+        <div class="flex items-center justify-between">
+          <label class="text-[11px] font-bold text-amber-800">📌 待辦清單 (每行一項)</label>
+          <div class="flex items-center gap-1.5">
+            <button id="btnSyncCal" onclick="syncCurrentToCalendar()" title="加入 Google 日曆" class="text-[10px] text-blue-600 bg-blue-50 hover:bg-blue-100 active:scale-95 px-2 py-0.5 rounded-md font-semibold flex items-center gap-1 transition">
+              <i class="fa-regular fa-calendar-plus"></i> 加到日曆
             </button>
-        </div>
-    </header>
-
-    <main class="max-w-md mx-auto px-5 pt-2 pb-safe space-y-5">
-        <div>
-            <h2 class="text-2xl font-bold text-slate-900 flex items-center gap-1.5">
-                <span id="greetingText">晚安</span>，<span id="userNameDisplay">我的朋友</span>
-            </h2>
-            <p class="text-xs text-slate-500 mt-1">看到有用的東西，先丟進來；之後用一句話找回。</p>
-        </div>
-
-        <!-- 頂部快速搜尋列 -->
-        <div class="relative bg-white rounded-2xl shadow-sm border border-slate-200/80 p-1.5 flex items-center">
-            <div class="pl-3 pr-2 text-brand text-lg">
-                <i class="fa-solid fa-wand-magic-sparkles"></i>
-            </div>
-            <input type="text" id="aiSearchInput" onkeydown="handleSearchKey(event)" placeholder="問 AI 找資料，例如「下週車輛保養」" class="w-full text-xs text-slate-700 placeholder-slate-400 bg-transparent outline-none">
-            <button onclick="triggerSmartAISearch()" class="bg-brand hover:bg-brand-dark text-white rounded-xl w-8 h-8 flex items-center justify-center shrink-0 transition">
-                <i class="fa-solid fa-magnifying-glass text-xs"></i>
+            <button id="btnSyncTasks" onclick="syncCurrentToTasks()" title="直接寫入 Google 工作 (Tasks)" class="text-[10px] text-emerald-700 bg-emerald-50 hover:bg-emerald-100 active:scale-95 px-2 py-0.5 rounded-md font-semibold flex items-center gap-1 transition">
+              <i class="fa-solid fa-list-check"></i> 加到工作
             </button>
+          </div>
         </div>
+        <textarea id="editDetailTodos" rows="2" placeholder="無待辦事項" class="w-full text-xs bg-amber-50/60 border border-amber-200 rounded-xl p-2.5 outline-none text-amber-900 focus:border-amber-400"></textarea>
+      </div>
 
-        <button onclick="openAddModal()" class="w-full bg-brand hover:bg-brand-dark active:scale-[0.99] text-white py-3.5 rounded-2xl font-semibold text-base shadow-sm flex items-center justify-center gap-2 transition">
-            <i class="fa-solid fa-plus text-sm"></i>
-            <span>添加記憶</span>
+      <div>
+        <label class="block text-[11px] font-bold text-slate-500 mb-1">標籤 (逗號分隔)</label>
+        <input type="text" id="editDetailTags" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand">
+      </div>
+
+      <div>
+        <label class="block text-[11px] font-bold text-slate-500 mb-1">原始輸入內容</label>
+        <textarea id="editDetailRawContent" rows="3" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand"></textarea>
+      </div>
+
+      <div id="detailYouTubeWrapper" class="hidden pt-1">
+        <a id="detailYouTubeLink" href="#" target="_blank" class="inline-flex items-center justify-center gap-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 p-2.5 rounded-xl w-full shadow-sm transition">
+          <i class="fa-brands fa-youtube text-base"></i>
+          <span>開啟 YouTube 影片觀看</span>
+        </a>
+      </div>
+
+      <div id="detailAttachmentWrapper" class="hidden pt-1">
+        <a id="detailAttachmentLink" href="#" target="_blank" class="inline-flex items-center gap-2 text-xs text-brand font-medium hover:underline p-2.5 bg-emerald-50 rounded-xl w-full">
+          <i class="fa-solid fa-paperclip"></i>
+          <span class="truncate">在 Google Drive 開啟雲端附件</span>
+        </a>
+      </div>
+
+      <!-- 建立時間戳記 -->
+      <div id="detailTimestamp" class="text-[11px] text-slate-400"></div>
+
+      <!-- 底部操作區：刪除與儲存 -->
+      <div class="flex items-center justify-between pt-3 border-t gap-2">
+        <button onclick="deleteCurrentNote()" class="text-xs text-red-500 hover:bg-red-50 px-3 py-2 rounded-xl font-bold flex items-center gap-1 transition">
+          <i class="fa-regular fa-trash-can"></i> 刪除此筆
         </button>
-
-        <!-- 未分類橫幅 -->
-        <div id="unclassifiedBanner" class="bg-brand-accent border border-brand-borderOrange rounded-2xl p-3.5 flex items-start justify-between gap-2 shadow-xs cursor-pointer" onclick="filterByCategory('未分類')">
-            <div class="flex items-start gap-2.5">
-                <div class="text-brand-orangeText text-lg mt-0.5">
-                    <i class="fa-regular fa-folder-open"></i>
-                </div>
-                <div>
-                    <h4 class="text-xs font-semibold text-brand-orangeText">
-                        有 <span id="unclassifiedCount">0</span> 筆資料還沒分類，點一下就能歸好
-                    </h4>
-                    <p class="text-[11px] text-brand-orangeText/80 mt-0.5">（點開卡片即可隨時修改所有內容或補傳相片）</p>
-                </div>
-            </div>
-            <span class="text-xs text-brand-orangeText font-medium whitespace-nowrap mt-0.5 flex items-center gap-1">
-                整理 <i class="fa-solid fa-arrow-right text-[10px]"></i>
-            </span>
-        </div>
-
-        <!-- 分類區 -->
-        <div>
-            <div class="flex items-center justify-between text-xs text-slate-500 mb-2.5 font-medium">
-                <span class="text-slate-800 font-bold text-sm">文件分類</span>
-                <button onclick="fetchNotesFromDrive()" class="hover:underline flex items-center gap-1 text-[11px]">
-                    最近新增 <i class="fa-solid fa-arrow-right text-[9px]"></i>
-                </button>
-            </div>
-            <div class="grid grid-cols-2 gap-2.5" id="categoryGrid">
-                <div onclick="filterByCategory('財務')" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
-                    <div class="text-2xl">💰</div>
-                    <div>
-                        <div class="text-xs font-bold text-slate-800">財務</div>
-                        <div class="text-[11px] text-slate-400 font-normal"><span id="count-財務">0</span> 筆</div>
-                    </div>
-                </div>
-                <div onclick="filterByCategory('工作')" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
-                    <div class="text-2xl">💼</div>
-                    <div>
-                        <div class="text-xs font-bold text-slate-800">工作</div>
-                        <div class="text-[11px] text-slate-400 font-normal"><span id="count-工作">0</span> 筆</div>
-                    </div>
-                </div>
-                <div onclick="filterByCategory('旅行')" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
-                    <div class="text-2xl">✈️</div>
-                    <div>
-                        <div class="text-xs font-bold text-slate-800">旅行</div>
-                        <div class="text-[11px] text-slate-400 font-normal"><span id="count-旅行">0</span> 筆</div>
-                    </div>
-                </div>
-                <div onclick="filterByCategory('醫療健康')" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
-                    <div class="text-2xl">🏥</div>
-                    <div>
-                        <div class="text-xs font-bold text-slate-800">醫療健康</div>
-                        <div class="text-[11px] text-slate-400 font-normal"><span id="count-醫療健康">0</span> 筆</div>
-                    </div>
-                </div>
-                <div onclick="filterByCategory('證件')" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
-                    <div class="text-2xl">🪪</div>
-                    <div>
-                        <div class="text-xs font-bold text-slate-800">證件</div>
-                        <div class="text-[11px] text-slate-400 font-normal"><span id="count-證件">0</span> 筆</div>
-                    </div>
-                </div>
-                <div onclick="filterByCategory('家庭生活')" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
-                    <div class="text-2xl">🏡</div>
-                    <div>
-                        <div class="text-xs font-bold text-slate-800">家庭生活</div>
-                        <div class="text-[11px] text-slate-400 font-normal"><span id="count-家庭生活">0</span> 筆</div>
-                    </div>
-                </div>
-                <div onclick="filterByCategory('購物')" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
-                    <div class="text-2xl">🛒</div>
-                    <div>
-                        <div class="text-xs font-bold text-slate-800">購物</div>
-                        <div class="text-[11px] text-slate-400 font-normal"><span id="count-購物">0</span> 筆</div>
-                    </div>
-                </div>
-                <div onclick="filterByCategory('學習')" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
-                    <div class="text-2xl">📚</div>
-                    <div>
-                        <div class="text-xs font-bold text-slate-800">學習</div>
-                        <div class="text-[11px] text-slate-400 font-normal"><span id="count-學習">0</span> 筆</div>
-                    </div>
-                </div>
-                <div onclick="filterByCategory('未分類')" class="bg-[#FFFDFB] p-3.5 rounded-2xl border border-dashed border-brand-borderOrange shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
-                    <div class="text-2xl">📂</div>
-                    <div>
-                        <div class="text-xs font-bold text-brand-orangeText">未分類</div>
-                        <div class="text-[11px] text-brand-orangeText/70"><span id="count-未分類">0</span> 筆待整理</div>
-                    </div>
-                </div>
-                <div onclick="showAllNotes()" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 cursor-pointer hover:border-brand transition">
-                    <div class="text-lg text-slate-500 pl-1">⚙️</div>
-                    <div class="text-xs font-bold text-slate-700">檢視全部記憶</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 即將到來 -->
-        <div>
-            <div class="flex items-center justify-between text-xs text-slate-500 mb-2 font-medium">
-                <span class="text-slate-800 font-bold text-sm">即將到來</span>
-                <button onclick="filterByReminders()" class="hover:underline flex items-center gap-1 text-[11px]">全部 <i class="fa-solid fa-arrow-right text-[9px]"></i></button>
-            </div>
-            <div id="reminderContainer" class="space-y-2">
-                <div class="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-xs text-center text-xs text-slate-400">
-                    尚無提醒事項
-                </div>
-            </div>
-        </div>
-
-        <!-- 待辦任務清單 -->
-        <div>
-            <div class="text-slate-800 font-bold text-sm mb-2">指派給我的任務（有設定日期）</div>
-            <div id="todoContainer" class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs space-y-2 text-xs text-slate-400">
-                沒有待辦任務 🎉
-            </div>
-        </div>
-
-        <!-- 記憶清單展示區 -->
-        <div id="notesSection" class="pt-2">
-            <div id="aiDirectAnswerWrapper" class="hidden mb-4 bg-emerald-50 border border-emerald-200/80 rounded-2xl p-4 space-y-1 shadow-xs">
-                <div class="flex items-center gap-1.5 text-xs font-bold text-brand">
-                    <i class="fa-solid fa-sparkles"></i>
-                    <span>AI 第二大腦解答：</span>
-                </div>
-                <p id="aiDirectAnswerText" class="text-xs text-emerald-950 leading-relaxed font-medium"></p>
-            </div>
-            <div class="flex items-center justify-between mb-2">
-                <h3 class="text-xs font-bold text-slate-700" id="currentFilterTitle">最近新增記憶</h3>
-                <button onclick="fetchNotesFromDrive()" class="text-xs text-brand hover:underline">重新整理</button>
-            </div>
-            <div id="cardsWrapper" class="space-y-3"></div>
-        </div>
-    </main>
-
-    <!-- 底部導覽列 -->
-    <nav class="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-slate-200 px-6 py-2 flex items-center justify-between z-20 max-w-md mx-auto">
-        <button onclick="showAllNotes()" class="flex flex-col items-center text-brand">
-            <i class="fa-solid fa-house text-lg"></i>
-            <span class="text-[10px] mt-0.5 font-medium">首頁</span>
+        <button id="btnSaveFullEdit" onclick="saveFullNoteEdit()" class="bg-brand hover:bg-brand-dark text-white text-xs px-5 py-2.5 rounded-xl font-bold shadow-sm transition">
+          儲存所有修改
         </button>
-        <button onclick="alert('群組功能即將推出')" class="flex flex-col items-center text-slate-400 hover:text-slate-600">
-            <i class="fa-solid fa-user-group text-lg"></i>
-            <span class="text-[10px] mt-0.5">群組</span>
-        </button>
-        <button onclick="openAddModal()" class="w-12 h-12 rounded-full bg-brand hover:bg-brand-dark text-white flex items-center justify-center -mt-5 shadow-lg active:scale-95 transition">
-            <i class="fa-solid fa-plus text-xl"></i>
-        </button>
-        <button onclick="openSearchModal()" class="flex flex-col items-center text-slate-400 hover:text-slate-600">
-            <i class="fa-solid fa-wand-magic-sparkles text-lg"></i>
-            <span class="text-[10px] mt-0.5">AI 搜尋</span>
-        </button>
-        <button onclick="filterByReminders()" class="flex flex-col items-center text-slate-400 hover:text-slate-600">
-            <i class="fa-regular fa-bell text-lg"></i>
-            <span class="text-[10px] mt-0.5">提醒</span>
-        </button>
-    </nav>
+      </div>
+    </div>
+  </div>
 
-    <!-- 彈窗：AI 搜尋 -->
-    <div id="searchModal" class="modal-layer fixed inset-0 bg-black/60 backdrop-blur-xs flex items-start justify-center p-4 pt-16 hidden">
-        <div class="bg-white w-full max-w-md rounded-2xl p-5 space-y-4 shadow-xl">
-            <div class="flex items-center justify-between border-b pb-2">
-                <div class="flex items-center gap-2 text-brand font-bold text-sm">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i>
-                    <span>問 AI 第二大腦</span>
-                </div>
-                <button onclick="closeSearchModal()" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
-            </div>
-            <div class="relative bg-slate-50 rounded-xl border border-slate-200 p-2 flex items-center">
-                <input type="text" id="modalSearchQuery" placeholder="用自然一句話提問，例如「何時要保養車」" class="w-full text-xs text-slate-800 bg-transparent outline-none pr-8" onkeydown="if(event.key==='Enter') executeModalSearch()">
-                <button id="btnExecuteSearch" onclick="executeModalSearch()" class="absolute right-2 bg-brand text-white w-7 h-7 rounded-lg flex items-center justify-center">
-                    <i class="fa-solid fa-magnifying-glass text-xs"></i>
-                </button>
-            </div>
-        </div>
+  <!-- 彈窗 4：設定與資料備份彈窗 -->
+  <div id="configModal" class="modal-layer fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-sm rounded-2xl p-5 space-y-4 shadow-xl max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b pb-2">
+        <h3 class="text-sm font-bold text-slate-900">設定與資料管理</h3>
+        <button onclick="toggleConfigModal()" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
+      </div>
+
+     <!-- 資料匯出備份區 -->
+    <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
+      <span class="text-[11px] font-bold text-slate-600 block">📥 資料匯出備份</span>
+      <button onclick="exportDataAsPDF()" class="w-full bg-white border border-slate-300 hover:border-red-500 text-slate-700 py-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition active:scale-95 shadow-xs">
+        <i class="fa-solid fa-file-pdf text-red-500 text-base"></i> 匯出全部記憶為 PDF (含相片)
+      </button>
     </div>
 
-    <!-- 彈窗 1：新增記憶輸入框 -->
-    <div id="addModal" class="modal-layer fixed inset-0 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center hidden">
-        <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-5 space-y-4 shadow-xl">
-            <div class="flex items-center justify-between border-b pb-2">
-                <h3 class="text-sm font-bold text-slate-900">隨手記 / 丟入記憶</h3>
-                <button onclick="closeAddModal()" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
-            </div>
-            <textarea id="modalInput" rows="4" placeholder="貼上文字、對話、網址，或按下方拍照/語音..." class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl p-3 outline-none focus:border-brand"></textarea>
-            <div id="modalFilePreview" class="hidden text-xs bg-slate-100 p-2 rounded-lg flex items-center justify-between">
-                <span id="modalFileName" class="truncate"></span>
-                <button onclick="clearModalFile()" class="text-red-500 font-bold ml-2">✕</button>
-            </div>
-            <div class="flex items-center justify-between pt-1">
-                <div class="flex items-center space-x-2 text-slate-600">
-                    <button id="modalVoiceBtn" onclick="toggleVoiceInputModal()" title="語音輸入" class="p-2 hover:bg-slate-100 rounded-full text-base">
-                        <i class="fa-solid fa-microphone"></i>
-                    </button>
-                    <label title="開啟相機拍攝" class="p-2 hover:bg-slate-100 rounded-full text-base cursor-pointer text-brand">
-                        <i class="fa-solid fa-camera"></i>
-                        <input type="file" id="modalCameraInput" accept="image/*" capture="camera" class="hidden" onchange="handleModalFile(event)">
-                    </label>
-                    <label title="從相簿選取" class="p-2 hover:bg-slate-100 rounded-full text-base cursor-pointer">
-                        <i class="fa-regular fa-image"></i>
-                        <input type="file" id="modalFileInput" accept="image/*,video/*" class="hidden" onchange="handleModalFile(event)">
-                    </label>
-                </div>
-                <button id="modalAnalyzeBtn" onclick="requestAIPreview()" class="bg-brand hover:bg-brand-dark text-white px-5 py-2.5 rounded-xl font-medium text-xs shadow-sm flex items-center gap-1.5 transition">
-                    <i class="fa-solid fa-wand-magic-sparkles text-xs"></i>
-                    <span>AI 分析記憶</span>
-                </button>
-            </div>
-        </div>
+      <div>
+        <label class="block text-[11px] font-semibold text-slate-600 mb-1">你的暱稱</label>
+        <input type="text" id="userNameInput" placeholder="例如：家廣" class="w-full border border-slate-300 rounded-lg p-2 text-xs">
+      </div>
+      <div>
+        <label class="block text-[11px] font-semibold text-slate-600 mb-1">Google Apps Script Web App URL</label>
+        <input type="text" id="cfgGasUrl" placeholder="https://script.google.com/macros/s/.../exec" class="w-full border border-slate-300 rounded-lg p-2 text-xs">
+      </div>
+      <div>
+        <label class="block text-[11px] font-semibold text-slate-600 mb-1">Gemini API Key</label>
+        <input type="password" id="cfgApiKey" placeholder="貼上 AQ.Ab8RN6... 開頭的金鑰" class="w-full border border-slate-300 rounded-lg p-2 text-xs">
+      </div>
+
+      <div class="flex justify-end space-x-2 pt-2 border-t">
+        <button onclick="toggleConfigModal()" class="px-3 py-1.5 text-xs text-slate-600 rounded-lg">取消</button>
+        <button onclick="saveConfigurations()" class="px-3 py-1.5 text-xs bg-brand text-white rounded-lg font-medium">儲存設定</button>
+      </div>
     </div>
+  </div>
 
-    <!-- 彈窗 2：AI 分析預覽核對面板 -->
-    <div id="previewModal" class="modal-layer fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
-        <div class="bg-white w-full max-w-md rounded-2xl p-5 space-y-3.5 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div class="flex items-center justify-between border-b pb-2">
-                <div class="flex items-center gap-1.5 text-brand font-bold text-sm">
-                    <i class="fa-solid fa-sparkles"></i>
-                    <span>AI 分析預覽核對</span>
-                </div>
-                <button onclick="closePreviewModal()" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
-            </div>
-            <div>
-                <label class="block text-[11px] font-bold text-slate-500 mb-1">標題</label>
-                <input type="text" id="prevTitle" class="w-full text-sm font-bold bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand">
-            </div>
-            <div class="grid grid-cols-2 gap-2">
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-500 mb-1">分類</label>
-                    <select id="prevCategory" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand">
-                        <option value="財務">💰 財務</option>
-                        <option value="工作">💼 工作</option>
-                        <option value="旅行">✈️ 旅行</option>
-                        <option value="醫療健康">🏥 醫療健康</option>
-                        <option value="證件">🪪 證件</option>
-                        <option value="家庭生活">🏡 家庭生活</option>
-                        <option value="購物">🛒 購物</option>
-                        <option value="學習">📚 學習</option>
-                        <option value="未分類">📂 未分類</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-500 mb-1">提醒日期（有填日期才會列入首頁任務）</label>
-                    <input type="date" id="prevReminderDate" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand">
-                </div>
-            </div>
-            <div>
-                <label class="block text-[11px] font-bold text-slate-500 mb-1">一句話重點摘要</label>
-                <textarea id="prevSummary" rows="2" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand"></textarea>
-            </div>
-            <div>
-                <label class="block text-[11px] font-bold text-slate-500 mb-1">待辦清單 (每行一項)</label>
-                <textarea id="prevTodos" rows="2" placeholder="無待辦事項" class="w-full text-xs bg-amber-50/60 border border-amber-200 rounded-xl p-2.5 outline-none text-amber-900"></textarea>
-            </div>
-            <div>
-                <label class="block text-[11px] font-bold text-slate-500 mb-1">標籤 (逗號分隔)</label>
-                <input type="text" id="prevTags" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand">
-            </div>
-            <div class="flex items-center justify-end gap-2 pt-2 border-t">
-                <button onclick="closePreviewModal()" class="text-xs text-slate-500 px-4 py-2.5 rounded-xl hover:bg-slate-100">
-                    返回修改
-                </button>
-                <button id="btnConfirmSave" onclick="confirmSaveToCloud()" class="bg-brand hover:bg-brand-dark text-white text-xs px-5 py-2.5 rounded-xl font-bold shadow-sm transition">
-                    確認存入雲端
-                </button>
-            </div>
-        </div>
-    </div>
+  <script>
+    let allNotes = [];
+    let currentDetailNote = null;
+    let currentActiveMediaUrl = "";
+    let modalFileBase64 = null;
+    let modalFileName = "";
+    let isVoiceActive = false;
+    let recognition = null;
+    let currentDisplayList = [];
 
-    <!-- 彈窗 3：記憶詳細資訊（含補傳相片、刪除、整合 Google 日曆與 Google 工作） -->
-    <div id="detailModal" class="modal-layer fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
-        <div class="bg-white w-full max-w-md rounded-2xl p-5 space-y-3.5 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div class="flex items-center justify-between border-b pb-2">
-                <span class="text-xs text-slate-400 font-medium" id="detailModalHeader">記憶詳細內容</span>
-                <button onclick="closeDetailModal()" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
-            </div>
-            
-            <!-- 圖片預覽區 -->
-            <div id="detailImageContainer" class="hidden rounded-xl overflow-hidden border border-slate-200 relative group cursor-pointer" onclick="handlePreviewMediaClick()">
-                <img id="detailImage" src="" alt="附件圖片" class="w-full max-h-52 object-cover">
-                <div id="ytPlayIcon" class="hidden absolute inset-0 bg-black/30 flex items-center justify-center text-white text-4xl">
-                    <i class="fa-brands fa-youtube text-red-600 bg-white rounded-2xl px-2 py-1 shadow-lg"></i>
-                </div>
-            </div>
+    const CATEGORIES = ["財務", "工作", "旅行", "醫療健康", "證件", "家庭生活", "購物", "學習", "未分類"];
 
-            <!-- 新增：補傳 / 更換相片按鈕區 -->
-            <div class="flex items-center justify-between bg-slate-50 border border-slate-200/80 rounded-xl p-2">
-                <div class="flex items-center gap-2">
-                    <label class="cursor-pointer text-xs bg-white border border-slate-200 hover:border-brand text-slate-700 px-2.5 py-1.5 rounded-lg font-medium flex items-center gap-1.5 transition shadow-2xs">
-                        <i class="fa-solid fa-camera text-brand"></i>
-                        <span>拍照補傳</span>
-                        <input type="file" id="editDetailCameraInput" accept="image/*" capture="camera" class="hidden" onchange="handleDetailFileChange(event)">
-                    </label>
-                    <label class="cursor-pointer text-xs bg-white border border-slate-200 hover:border-brand text-slate-700 px-2.5 py-1.5 rounded-lg font-medium flex items-center gap-1.5 transition shadow-2xs">
-                        <i class="fa-regular fa-image text-brand"></i>
-                        <span>相簿選圖</span>
-                        <input type="file" id="editDetailFileInput" accept="image/*" class="hidden" onchange="handleDetailFileChange(event)">
-                    </label>
-                </div>
-                <span id="editDetailFileName" class="text-[11px] text-emerald-600 font-medium truncate max-w-[120px]"></span>
-            </div>
+    function setFontSize(size) {
+      const htmlEl = document.documentElement;
+      htmlEl.classList.remove('font-size-md', 'font-size-lg', 'font-size-xl');
+      htmlEl.classList.add(`font-size-${size}`);
+      localStorage.setItem('MEMOBOX_FONT_SIZE', size);
+      updateFontSizeButtonStyles(size);
+    }
 
-            <div>
-                <label class="block text-[11px] font-bold text-slate-500 mb-1">標題</label>
-                <input type="text" id="editDetailTitle" class="w-full text-sm font-bold bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand">
-            </div>
-            <div class="grid grid-cols-2 gap-2">
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-500 mb-1">分類</label>
-                    <select id="editDetailCategory" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand">
-                        <option value="財務">💰 財務</option>
-                        <option value="工作">💼 工作</option>
-                        <option value="旅行">✈️ 旅行</option>
-                        <option value="醫療健康">🏥 醫療健康</option>
-                        <option value="證件">🪪 證件</option>
-                        <option value="家庭生活">🏡 家庭生活</option>
-                        <option value="購物">🛒 購物</option>
-                        <option value="學習">📚 學習</option>
-                        <option value="未分類">📂 未分類</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-500 mb-1">提醒日期</label>
-                    <input type="date" id="editDetailReminderDate" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand">
-                </div>
-            </div>
-            <div>
-                <label class="block text-[11px] font-bold text-slate-500 mb-1">AI 重點摘要</label>
-                <textarea id="editDetailSummary" rows="2" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand"></textarea>
-            </div>
-
-            <!-- 待辦清單與整合 Google 日曆 / Google 工作按鈕 -->
-            <div class="space-y-1.5">
-                <div class="flex items-center justify-between">
-                    <label class="text-[11px] font-bold text-amber-800">📌 待辦清單 (每行一項)</label>
-                    <div class="flex items-center gap-1.5">
-                        <button id="btnSyncCal" onclick="syncCurrentToCalendar()" title="加入 Google 日曆" class="text-[10px] text-blue-600 bg-blue-50 hover:bg-blue-100 active:scale-95 px-2 py-0.5 rounded-md font-semibold flex items-center gap-1 transition">
-                            <i class="fa-regular fa-calendar-plus"></i> 加到日曆
-                        </button>
-                        <button id="btnSyncTasks" onclick="syncCurrentToTasks()" title="直接寫入 Google 工作 (Tasks)" class="text-[10px] text-emerald-700 bg-emerald-50 hover:bg-emerald-100 active:scale-95 px-2 py-0.5 rounded-md font-semibold flex items-center gap-1 transition">
-                            <i class="fa-solid fa-list-check"></i> 加到工作
-                        </button>
-                    </div>
-                </div>
-                <textarea id="editDetailTodos" rows="2" placeholder="無待辦事項" class="w-full text-xs bg-amber-50/60 border border-amber-200 rounded-xl p-2.5 outline-none text-amber-900 focus:border-amber-400"></textarea>
-            </div>
-
-            <div>
-                <label class="block text-[11px] font-bold text-slate-500 mb-1">標籤 (逗號分隔)</label>
-                <input type="text" id="editDetailTags" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand">
-            </div>
-            <div>
-                <label class="block text-[11px] font-bold text-slate-500 mb-1">原始輸入內容</label>
-                <textarea id="editDetailRawContent" rows="3" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand"></textarea>
-            </div>
-            <div id="detailYouTubeWrapper" class="hidden pt-1">
-                <a id="detailYouTubeLink" href="#" target="_blank" class="inline-flex items-center justify-center gap-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 p-2.5 rounded-xl w-full shadow-sm transition">
-                    <i class="fa-brands fa-youtube text-base"></i>
-                    <span>開啟 YouTube 影片觀看</span>
-                </a>
-            </div>
-            <div id="detailAttachmentWrapper" class="hidden pt-1">
-                <a id="detailAttachmentLink" href="#" target="_blank" class="inline-flex items-center gap-2 text-xs text-brand font-medium hover:underline p-2.5 bg-emerald-50 rounded-xl w-full">
-                    <i class="fa-solid fa-paperclip"></i>
-                    <span class="truncate">在 Google Drive 開啟雲端附件</span>
-                </a>
-            </div>
-            <div id="detailTimestamp" class="text-[11px] text-slate-400"></div>
-            <div class="flex items-center justify-between pt-3 border-t gap-2">
-                <button onclick="deleteCurrentNote()" class="text-xs text-red-500 hover:bg-red-50 px-3 py-2 rounded-xl font-bold flex items-center gap-1 transition">
-                    <i class="fa-regular fa-trash-can"></i> 刪除此筆
-                </button>
-                <button id="btnSaveFullEdit" onclick="saveFullNoteEdit()" class="bg-brand hover:bg-brand-dark text-white text-xs px-5 py-2.5 rounded-xl font-bold shadow-sm transition">
-                    儲存所有修改
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 彈窗 4：設定與資料備份彈窗 -->
-    <div id="configModal" class="modal-layer fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
-        <div class="bg-white w-full max-w-sm rounded-2xl p-5 space-y-4 shadow-xl max-h-[90vh] overflow-y-auto">
-            <div class="flex items-center justify-between border-b pb-2">
-                <h3 class="text-sm font-bold text-slate-900">設定與資料管理</h3>
-                <button onclick="toggleConfigModal()" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
-            </div>
-            <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
-                <span class="text-[11px] font-bold text-slate-600 block">📥 資料匯出備份</span>
-                <button onclick="exportDataAsPDF()" class="w-full bg-white border border-slate-300 hover:border-red-500 text-slate-700 py-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition active:scale-95 shadow-xs">
-                    <i class="fa-solid fa-file-pdf text-red-500 text-base"></i>
-                    匯出全部記憶為 PDF (含相片)
-                </button>
-            </div>
-            <div>
-                <label class="block text-[11px] font-semibold text-slate-600 mb-1">你的暱稱</label>
-                <input type="text" id="userNameInput" placeholder="例如：家廣" class="w-full border border-slate-300 rounded-lg p-2 text-xs">
-            </div>
-            <div>
-                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Google Apps Script Web App URL</label>
-                <input type="text" id="cfgGasUrl" placeholder="https://script.google.com/macros/s/.../exec" class="w-full border border-slate-300 rounded-lg p-2 text-xs">
-            </div>
-            <div>
-                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Gemini API Key</label>
-                <input type="password" id="cfgApiKey" placeholder="貼上 AQ.Ab8RN6... 開頭的金鑰" class="w-full border border-slate-300 rounded-lg p-2 text-xs">
-            </div>
-            <div class="flex justify-end space-x-2 pt-2 border-t">
-                <button onclick="toggleConfigModal()" class="px-3 py-1.5 text-xs text-slate-600 rounded-lg">取消</button>
-                <button onclick="saveConfigurations()" class="px-3 py-1.5 text-xs bg-brand text-white rounded-lg font-medium">儲存設定</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        let allNotes = [];
-        let currentDetailNote = null;
-        let currentActiveMediaUrl = "";
-        let modalFileBase64 = null;
-        let modalFileName = "";
-        let detailFileBase64 = null; // 事後補傳相片用的 Base64
-        let detailFileName = "";   // 事後補傳相片用的檔名
-        let isVoiceActive = false;
-        let recognition = null;
-        let currentDisplayList = [];
-        let isSavingLock = false;    // 防止重複送出鎖定
-
-        const CATEGORIES = ["財務", "工作", "旅行", "醫療健康", "證件", "家庭生活", "購物", "學習", "未分類"];
-
-        function setFontSize(size) {
-            const htmlEl = document.documentElement;
-            htmlEl.classList.remove('font-size-md', 'font-size-lg', 'font-size-xl');
-            htmlEl.classList.add(`font-size-${size}`);
-            localStorage.setItem('MEMOBOX_FONT_SIZE', size);
-            updateFontSizeButtonStyles(size);
+    function updateFontSizeButtonStyles(activeSize) {
+      ['md', 'lg', 'xl'].forEach(sz => {
+        const btn = document.getElementById(`btnFont${sz.charAt(0).toUpperCase() + sz.slice(1)}`);
+        if (btn) {
+          if (sz === activeSize) {
+            btn.className = "text-xs font-bold px-2 py-1 rounded-lg bg-brand text-white shadow-xs transition";
+          } else {
+            btn.className = "text-xs font-bold px-2 py-1 rounded-lg text-slate-500 hover:text-brand transition";
+          }
         }
+      });
+    }
 
-        function updateFontSizeButtonStyles(activeSize) {
-            ['md', 'lg', 'xl'].forEach(sz => {
-                const btn = document.getElementById(`btnFont${sz.charAt(0).toUpperCase() + sz.slice(1)}`);
-                if (btn) {
-                    if (sz === activeSize) {
-                        btn.className = "text-xs font-bold px-2 py-1 rounded-lg bg-brand text-white shadow-xs transition";
-                    } else {
-                        btn.className = "text-xs font-bold px-2 py-1 rounded-lg text-slate-500 hover:text-brand transition";
-                    }
-                }
-            });
-        }
+    function getDriveThumbnailUrl(url) {
+      if (!url) return "";
+      const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+      if (match && match[1]) {
+        return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w600`;
+      }
+      return "";
+    }
 
-        function getDriveThumbnailUrl(url) {
-            if (!url) return "";
-            const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-            if (match && match[1]) {
-                return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w600`;
-            }
-            return "";
-        }
+    function extractYouTubeVideoId(text) {
+      if (!text) return null;
+      const regExp = /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/;
+      const match = text.match(regExp);
+      return match ? match[1] : null;
+    }
 
-        function extractYouTubeVideoId(text) {
-            if (!text) return null;
-            const regExp = /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/;
-            const match = text.match(regExp);
-            return match ? match[1] : null;
-        }
+    function getMediaInfo(item) {
+      if (item['附件連結'] && String(item['附件連結']).trim()) {
+        return {
+          thumbUrl: getDriveThumbnailUrl(item['附件連結']),
+          openUrl: item['附件連結'],
+          type: 'drive'
+        };
+      }
+      const raw = (item['原始內容'] || '') + ' ' + (item['摘要'] || '');
+      const ytId = extractYouTubeVideoId(raw);
+      if (ytId) {
+        return {
+          thumbUrl: `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`,
+          openUrl: `https://www.youtube.com/watch?v=${ytId}`,
+          type: 'youtube'
+        };
+      }
+      return { thumbUrl: "", openUrl: "", type: "none" };
+    }
 
-        function getMediaInfo(item) {
-            if (item['附件連結'] && String(item['附件連結']).trim()) {
-                return {
-                    thumbUrl: getDriveThumbnailUrl(item['附件連結']),
-                    openUrl: item['附件連結'],
-                    type: 'drive'
-                };
-            }
-            const raw = (item['原始內容'] || '') + ' ' + (item['摘要'] || '');
-            const ytId = extractYouTubeVideoId(raw);
-            if (ytId) {
-                return {
-                    thumbUrl: `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`,
-                    openUrl: `https://www.youtube.com/watch?v=${ytId}`,
-                    type: 'youtube'
-                };
-            }
-            return { thumbUrl: "", openUrl: "", type: "none" };
-        }
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedFontSize = localStorage.getItem('MEMOBOX_FONT_SIZE') || 'lg';
+      setFontSize(savedFontSize);
 
-        window.addEventListener('DOMContentLoaded', () => {
-            const savedFontSize = localStorage.getItem('MEMOBOX_FONT_SIZE') || 'lg';
-            setFontSize(savedFontSize);
-            const hour = new Date().getHours();
-            let greeting = "早安";
-            if (hour >= 11 && hour < 14) greeting = "午安";
-            else if (hour >= 14 && hour < 18) greeting = "下午好";
-            else if (hour >= 18 || hour < 5) greeting = "晚安";
-            document.getElementById('greetingText').innerText = greeting;
+      const hour = new Date().getHours();
+      let greeting = "早安";
+      if (hour >= 11 && hour < 14) greeting = "午安";
+      else if (hour >= 14 && hour < 18) greeting = "下午好";
+      else if (hour >= 18 || hour < 5) greeting = "晚安";
+      document.getElementById('greetingText').innerText = greeting;
 
-            const savedName = localStorage.getItem('MEMOBOX_USER_NAME') || '家廣';
-            document.getElementById('userNameDisplay').innerText = savedName;
-            document.getElementById('userNameInput').value = savedName;
-            document.getElementById('cfgGasUrl').value = localStorage.getItem('MEMOBOX_GAS_URL') || '';
-            document.getElementById('cfgApiKey').value = localStorage.getItem('MEMOBOX_GEMINI_KEY') || '';
+      const savedName = localStorage.getItem('MEMOBOX_USER_NAME') || '家廣';
+      document.getElementById('userNameDisplay').innerText = savedName;
+      document.getElementById('userNameInput').value = savedName;
 
-            if (localStorage.getItem('MEMOBOX_GAS_URL')) {
-                fetchNotesFromDrive();
-            } else {
-                toggleConfigModal();
-            }
-        });
+      document.getElementById('cfgGasUrl').value = localStorage.getItem('MEMOBOX_GAS_URL') || '';
+      document.getElementById('cfgApiKey').value = localStorage.getItem('MEMOBOX_GEMINI_KEY') || '';
 
-        function toggleConfigModal() {
-            document.getElementById('configModal').classList.toggle('hidden');
-        }
+      if (localStorage.getItem('MEMOBOX_GAS_URL')) {
+        fetchNotesFromDrive();
+      } else {
+        toggleConfigModal();
+      }
+    });
 
-        function saveConfigurations() {
-            const name = document.getElementById('userNameInput').value.trim() || '使用者';
-            const gas = document.getElementById('cfgGasUrl').value.trim();
-            const key = document.getElementById('cfgApiKey').value.trim();
-            localStorage.setItem('MEMOBOX_USER_NAME', name);
-            localStorage.setItem('MEMOBOX_GAS_URL', gas);
-            localStorage.setItem('MEMOBOX_GEMINI_KEY', key);
-            document.getElementById('userNameDisplay').innerText = name;
-            toggleConfigModal();
-            if (gas) fetchNotesFromDrive();
-        }
+    function toggleConfigModal() {
+      document.getElementById('configModal').classList.toggle('hidden');
+    }
 
-        function openAddModal() {
-            document.getElementById('addModal').classList.remove('hidden');
-            document.getElementById('modalInput').focus();
-        }
+    function saveConfigurations() {
+      const name = document.getElementById('userNameInput').value.trim() || '使用者';
+      const gas = document.getElementById('cfgGasUrl').value.trim();
+      const key = document.getElementById('cfgApiKey').value.trim();
 
-        function closeAddModal() {
-            document.getElementById('addModal').classList.add('hidden');
-            document.getElementById('modalInput').value = "";
-            clearModalFile();
-        }
+      localStorage.setItem('MEMOBOX_USER_NAME', name);
+      localStorage.setItem('MEMOBOX_GAS_URL', gas);
+      localStorage.setItem('MEMOBOX_GEMINI_KEY', key);
 
-        function openSearchModal() {
-            document.getElementById('searchModal').classList.remove('hidden');
-            document.getElementById('modalSearchQuery').focus();
-        }
+      document.getElementById('userNameDisplay').innerText = name;
+      toggleConfigModal();
+      if (gas) fetchNotesFromDrive();
+    }
 
-        function closeSearchModal() {
-            document.getElementById('searchModal').classList.add('hidden');
-        }
+    function openAddModal() {
+      document.getElementById('addModal').classList.remove('hidden');
+      document.getElementById('modalInput').focus();
+    }
 
-        function executeModalSearch() {
-            const q = document.getElementById('modalSearchQuery').value.trim();
-            if (q) {
-                document.getElementById('aiSearchInput').value = q;
-                triggerSmartAISearch(q);
-            }
-            closeSearchModal();
-        }
+    function closeAddModal() {
+      document.getElementById('addModal').classList.add('hidden');
+      document.getElementById('modalInput').value = "";
+      clearModalFile();
+    }
 
-        function handleModalFile(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            modalFileName = file.name;
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                modalFileBase64 = event.target.result;
-                document.getElementById('modalFilePreview').classList.remove('hidden');
-                document.getElementById('modalFileName').innerText = `已附加：${file.name}`;
-            };
-            reader.readAsDataURL(file);
-        }
+    function openSearchModal() {
+      document.getElementById('searchModal').classList.remove('hidden');
+      document.getElementById('modalSearchQuery').focus();
+    }
 
-        function clearModalFile() {
-            modalFileBase64 = null;
-            modalFileName = "";
-            if (document.getElementById('modalFileInput')) document.getElementById('modalFileInput').value = "";
-            if (document.getElementById('modalCameraInput')) document.getElementById('modalCameraInput').value = "";
-            document.getElementById('modalFilePreview').classList.add('hidden');
-        }
+    function closeSearchModal() {
+      document.getElementById('searchModal').classList.add('hidden');
+    }
 
-        // 處理詳細頁面的補傳相片
-        function handleDetailFileChange(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            detailFileName = file.name;
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                detailFileBase64 = event.target.result;
-                document.getElementById('editDetailFileName').innerText = `待上傳：${file.name}`;
-                document.getElementById('detailImage').src = detailFileBase64;
-                document.getElementById('detailImageContainer').classList.remove('hidden');
-                document.getElementById('ytPlayIcon').classList.add('hidden');
-            };
-            reader.readAsDataURL(file);
-        }
+    function executeModalSearch() {
+      const q = document.getElementById('modalSearchQuery').value.trim();
+      if (q) {
+        document.getElementById('aiSearchInput').value = q;
+        triggerSmartAISearch(q);
+      }
+      closeSearchModal();
+    }
 
-        function clearDetailFile() {
-            detailFileBase64 = null;
-            detailFileName = "";
-            if (document.getElementById('editDetailFileInput')) document.getElementById('editDetailFileInput').value = "";
-            if (document.getElementById('editDetailCameraInput')) document.getElementById('editDetailCameraInput').value = "";
-            if (document.getElementById('editDetailFileName')) document.getElementById('editDetailFileName').innerText = "";
-        }
+    function handleModalFile(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      modalFileName = file.name;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        modalFileBase64 = event.target.result;
+        document.getElementById('modalFilePreview').classList.remove('hidden');
+        document.getElementById('modalFileName').innerText = `已附加：${file.name}`;
+      };
+      reader.readAsDataURL(file);
+    }
 
-        function toggleVoiceInputModal() {
-            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-                alert('此瀏覽器未支援語音辨識');
-                return;
-            }
-            if (isVoiceActive) {
-                recognition.stop();
-                return;
-            }
-            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-            recognition = new SR();
-            recognition.lang = 'zh-TW';
-            recognition.continuous = false;
-            recognition.interimResults = false;
-            recognition.onstart = () => {
-                isVoiceActive = true;
-                document.getElementById('modalVoiceBtn').classList.add('text-red-500', 'animate-pulse');
-            };
-            recognition.onresult = (e) => {
-                const text = e.results[0][0].transcript;
-                const input = document.getElementById('modalInput');
-                input.value = (input.value ? input.value + " " : "") + text;
-            };
-            recognition.onend = () => {
-                isVoiceActive = false;
-                document.getElementById('modalVoiceBtn').classList.remove('text-red-500', 'animate-pulse');
-            };
-            recognition.start();
-        }
+    function clearModalFile() {
+      modalFileBase64 = null;
+      modalFileName = "";
+      if (document.getElementById('modalFileInput')) document.getElementById('modalFileInput').value = "";
+      if (document.getElementById('modalCameraInput')) document.getElementById('modalCameraInput').value = "";
+      document.getElementById('modalFilePreview').classList.add('hidden');
+    }
 
-        async function requestAIPreview() {
-            const text = document.getElementById('modalInput').value.trim();
-            const gasUrl = localStorage.getItem('MEMOBOX_GAS_URL');
-            const apiKey = localStorage.getItem('MEMOBOX_GEMINI_KEY');
-            if (!text && !modalFileBase64) {
-                alert('請先輸入筆記或夾帶照片');
-                return;
-            }
-            if (!gasUrl) {
-                alert('請先設定 Google Apps Script 網址');
-                toggleConfigModal();
-                return;
-            }
-            const btn = document.getElementById('modalAnalyzeBtn');
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>AI 分析中...</span>';
-            try {
-                const payload = {
-                    action: "previewAnalyze",
-                    content: text,
-                    apiKey: apiKey || "",
-                    fileBase64: modalFileBase64
-                };
-                const res = await fetch(gasUrl, {
-                    method: "POST",
-                    headers: { "Content-Type": "text/plain;charset=utf-8" },
-                    body: JSON.stringify(payload)
-                });
-                const json = await res.json();
-                if (json.status === "error") throw new Error(json.message);
-                const ai = json.aiResult;
-                const rDate = ai.reminder_date || '';
-                document.getElementById('prevTitle').value = ai.title || '';
-                document.getElementById('prevCategory').value = ai.category || '未分類';
-                document.getElementById('prevReminderDate').value = rDate;
-                document.getElementById('prevSummary').value = ai.summary || '';
-                
-                // 去重複並整理待辦清單
-                let rawTodos = Array.isArray(ai.action_items) ? ai.action_items : (ai.action_items ? String(ai.action_items).split('\n') : []);
-                let uniqueTodos = [...new Set(rawTodos.map(t => String(t).trim()).filter(Boolean))];
-                document.getElementById('prevTodos').value = uniqueTodos.join('\n');
-                
-                document.getElementById('prevTags').value = Array.isArray(ai.tags) ? ai.tags.join(', ') : (ai.tags || '');
-                document.getElementById('addModal').classList.add('hidden');
-                document.getElementById('previewModal').classList.remove('hidden');
-            } catch (err) {
-                alert("分析失敗：" + err.message);
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles text-xs"></i><span>AI 分析記憶</span>';
-            }
-        }
+    function toggleVoiceInputModal() {
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        alert('此瀏覽器未支援語音辨識');
+        return;
+      }
+      if (isVoiceActive) {
+        recognition.stop();
+        return;
+      }
 
-        function closePreviewModal() {
-            document.getElementById('previewModal').classList.add('hidden');
-            document.getElementById('addModal').classList.remove('hidden');
-        }
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new SR();
+      recognition.lang = 'zh-TW';
+      recognition.continuous = false;
+      recognition.interimResults = false;
 
-        async function confirmSaveToCloud() {
-            if (isSavingLock) return;
-            const gasUrl = localStorage.getItem('MEMOBOX_GAS_URL');
-            if (!gasUrl) return;
+      recognition.onstart = () => {
+        isVoiceActive = true;
+        document.getElementById('modalVoiceBtn').classList.add('text-red-500', 'animate-pulse');
+      };
+      recognition.onresult = (e) => {
+        const text = e.results[0][0].transcript;
+        const input = document.getElementById('modalInput');
+        input.value = (input.value ? input.value + " " : "") + text;
+      };
+      recognition.onend = () => {
+        isVoiceActive = false;
+        document.getElementById('modalVoiceBtn').classList.remove('text-red-500', 'animate-pulse');
+      };
+      recognition.start();
+    }
 
-            isSavingLock = true;
-            const rawContent = document.getElementById('modalInput').value.trim();
-            const title = document.getElementById('prevTitle').value.trim();
-            const category = document.getElementById('prevCategory').value;
-            const reminderDate = document.getElementById('prevReminderDate').value;
-            const summary = document.getElementById('prevSummary').value.trim();
-            const todos = document.getElementById('prevTodos').value.trim();
-            const tags = document.getElementById('prevTags').value.trim();
+    async function requestAIPreview() {
+      const text = document.getElementById('modalInput').value.trim();
+      const gasUrl = localStorage.getItem('MEMOBOX_GAS_URL');
+      const apiKey = localStorage.getItem('MEMOBOX_GEMINI_KEY');
 
-            // 去除重複的待辦行
-            const uniqueTodoLines = todos ? [...new Set(todos.split('\n').map(l => l.trim()).filter(Boolean))] : [];
+      if (!text && !modalFileBase64) {
+        alert('請先輸入筆記或夾帶照片');
+        return;
+      }
+      if (!gasUrl) {
+        alert('請先設定 Google Apps Script 網址');
+        toggleConfigModal();
+        return;
+      }
 
-            const btn = document.getElementById('btnConfirmSave');
-            btn.disabled = true;
-            btn.innerText = '寫入雲端中...';
-            try {
-                const payload = {
-                    content: rawContent,
-                    title: title,
-                    category: category,
-                    reminder_date: reminderDate,
-                    summary: summary,
-                    action_items: uniqueTodoLines,
-                    tags: tags ? tags.split(',').map(t => t.trim()) : [],
-                    fileBase64: modalFileBase64,
-                    fileName: modalFileName
-                };
-                const res = await fetch(gasUrl, {
-                    method: "POST",
-                    headers: { "Content-Type": "text/plain;charset=utf-8" },
-                    body: JSON.stringify(payload)
-                });
-                const json = await res.json();
-                if (json.status === "error") throw new Error(json.message);
-                document.getElementById('previewModal').classList.add('hidden');
-                document.getElementById('modalInput').value = "";
-                clearModalFile();
-                await fetchNotesFromDrive();
-            } catch (err) {
-                alert("存入失敗：" + err.message);
-            } finally {
-                isSavingLock = false;
-                btn.disabled = false;
-                btn.innerText = '確認存入雲端';
-            }
-        }
+      const btn = document.getElementById('modalAnalyzeBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>AI 分析中...</span>';
 
-        async function fetchNotesFromDrive() {
-            const gasUrl = localStorage.getItem('MEMOBOX_GAS_URL');
-            if (!gasUrl) return;
-            try {
-                const res = await fetch(gasUrl);
-                const json = await res.json();
-                if (json.status === "success") {
-                    allNotes = json.data || [];
-                    updateDashboard();
-                    renderNotesList(allNotes);
-                }
-            } catch (err) {
-                console.error("同步失敗：", err);
-            }
-        }
-
-        function updateDashboard() {
-            const counts = {};
-            CATEGORIES.forEach(c => counts[c] = 0);
-            let unclassified = 0;
-            let todos = [];
-            let reminders = [];
-            const seenTodoKeys = new Set(); // 用於首頁任務去重複
-            const todayStr = new Date().toISOString().split('T')[0];
-
-            allNotes.forEach((item) => {
-                const cat = item['分類'] || '未分類';
-                if (counts[cat] !== undefined) counts[cat]++;
-                else counts['未分類']++;
-                if (cat === '未分類') unclassified++;
-
-                const rDateStr = item['提醒日期'] ? item['提醒日期'].toString().trim().substring(0, 10) : '';
-
-                // 核心修正：必須同時有「待辦清單」且有「提醒日期」，才列入首頁「指派給我的任務」
-                if (item['待辦清單'] && item['待辦清單'].toString().trim() && rDateStr) {
-                    const lines = [...new Set(item['待辦清單'].toString().split('\n').map(l => l.trim()).filter(Boolean))];
-                    lines.forEach(l => {
-                        const dedupKey = `${item['ID']}_${l}`;
-                        if (!seenTodoKeys.has(dedupKey)) {
-                            seenTodoKeys.add(dedupKey);
-                            todos.push({ noteId: item['ID'], title: item['標題'], todo: l, date: rDateStr });
-                        }
-                    });
-                }
-
-                if (rDateStr) {
-                    const isExpired = rDateStr < todayStr;
-                    reminders.push({
-                        noteId: item['ID'],
-                        title: item['標題'],
-                        date: rDateStr,
-                        isExpired: isExpired
-                    });
-                }
-            });
-
-            CATEGORIES.forEach(c => {
-                const el = document.getElementById(`count-${c}`);
-                if (el) el.innerText = counts[c] || 0;
-            });
-            document.getElementById('unclassifiedCount').innerText = unclassified;
-
-            const reminderBox = document.getElementById('reminderContainer');
-            if (reminders.length > 0) {
-                reminderBox.innerHTML = reminders.map(r => `
-                    <div onclick="openDetailById('${r.noteId}')" class="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-xs flex items-center justify-between cursor-pointer active:scale-[0.99] transition">
-                        <div class="flex items-center gap-3">
-                            <div class="${r.isExpired ? 'text-red-500' : 'text-brand-orangeText'} text-lg">
-                                <i class="fa-regular fa-bell"></i>
-                            </div>
-                            <div>
-                                <div class="text-xs font-bold text-slate-800">${r.title || '無標題'}</div>
-                                <div class="text-[11px] text-slate-400">
-                                    ${r.date} ${r.isExpired ? '<span class="text-red-500 font-medium">已過期</span>' : '<span class="text-emerald-600 font-medium">預定</span>'}
-                                </div>
-                            </div>
-                        </div>
-                        <span class="${r.isExpired ? 'bg-red-50 text-red-600' : 'bg-orange-50 text-orange-600'} text-[10px] px-2 py-0.5 rounded-md font-medium">
-                            ${r.isExpired ? '過期' : '重要'}
-                        </span>
-                    </div>
-                `).join('');
-            } else {
-                reminderBox.innerHTML = `
-                    <div class="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-xs text-center text-xs text-slate-400">
-                        尚無提醒事項 🎉
-                    </div>
-                `;
-            }
-
-            const todoBox = document.getElementById('todoContainer');
-            if (todos.length > 0) {
-                todoBox.innerHTML = todos.map((t, i) => `
-                    <div class="flex items-start gap-2.5 py-1 text-left">
-                        <input type="checkbox" id="chk_${i}" class="mt-0.5 rounded text-brand focus:ring-0">
-                        <label for="chk_${i}" class="text-xs text-slate-700 leading-snug cursor-pointer">
-                            <span class="font-semibold text-slate-900">${t.title}：</span>${t.todo}
-                            <span class="text-[10px] text-slate-400 block mt-0.5"><i class="fa-regular fa-clock"></i> 期限：${t.date}</span>
-                        </label>
-                    </div>
-                `).join('');
-            } else {
-                todoBox.innerHTML = '沒有待辦任務 🎉';
-            }
-        }
-
-        function renderNotesList(list) {
-            const wrapper = document.getElementById('cardsWrapper');
-            wrapper.innerHTML = '';
-            currentDisplayList = list || [];
-            if (!list || list.length === 0) {
-                wrapper.innerHTML = '<div class="text-center text-xs text-slate-400 py-6">目前沒有找到符合條件的記憶資料</div>';
-                return;
-            }
-            list.forEach((item, index) => {
-                const media = getMediaInfo(item);
-                const card = document.createElement('div');
-                card.className = "bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs space-y-2 active:scale-[0.98] hover:border-brand/60 transition cursor-pointer select-none";
-                card.addEventListener('click', function() {
-                    openDetailById(item['ID'] || index);
-                });
-
-                let imgHtml = '';
-                if (media.thumbUrl) {
-                    imgHtml = `
-                        <div class="w-full h-40 rounded-xl overflow-hidden mb-2 bg-slate-100 relative pointer-events-none">
-                            <img src="${media.thumbUrl}" alt="縮圖" class="w-full h-full object-cover" loading="lazy">
-                            ${media.type === 'youtube' ? `
-                                <div class="absolute inset-0 bg-black/20 flex items-center justify-center">
-                                    <i class="fa-brands fa-youtube text-red-600 bg-white rounded-xl px-2 py-0.5 text-2xl shadow-md"></i>
-                                </div>
-                            ` : ''}
-                        </div>
-                    `;
-                }
-
-                let todoHtml = '';
-                if (item['待辦清單'] && String(item['待辦清單']).trim()) {
-                    todoHtml = `
-                        <div class="bg-amber-50/70 border border-amber-200/60 rounded-xl p-2 text-[11px] text-amber-800 pointer-events-none">
-                            📌 <strong>待辦：</strong>\n${item['待辦清單']}
-                        </div>
-                    `;
-                }
-
-                card.innerHTML = `
-                    ${imgHtml}
-                    <div class="flex items-center justify-between pointer-events-none">
-                        <span class="text-[10px] px-2 py-0.5 rounded-md bg-brand-light text-brand font-medium">${item['分類'] || '未分類'}</span>
-                        <span class="text-[10px] text-slate-400">${item['建立時間'] ? String(item['建立時間']).substring(5, 16) : ''}</span>
-                    </div>
-                    <h4 class="text-sm font-bold text-slate-800 pointer-events-none">${item['標題'] || '無標題'}</h4>
-                    <p class="text-xs text-slate-600 line-clamp-2 pointer-events-none">${item['摘要'] || item['原始內容'] || ''}</p>
-                    ${todoHtml}
-                    <div class="flex items-center justify-between pt-1 text-[11px] text-slate-400 pointer-events-none">
-                        <span>${item['提醒日期'] ? `⏰ ${String(item['提醒日期']).substring(0, 10)}` : ''}</span>
-                        <span class="text-brand flex items-center gap-1 text-[11px]">查看 / 編輯 <i class="fa-solid fa-chevron-right text-[9px]"></i></span>
-                    </div>
-                `;
-                wrapper.appendChild(card);
-            });
-        }
-
-        window.openDetailById = function(identifier) {
-            let item = allNotes.find(n => String(n['ID']) === String(identifier));
-            if (!item) {
-                const idx = parseInt(identifier, 10);
-                if (!isNaN(idx) && allNotes[idx]) item = allNotes[idx];
-            }
-            if (!item) {
-                alert('無法讀取此筆資料內容');
-                return;
-            }
-            currentDetailNote = item;
-            clearDetailFile(); // 開啟時清空上次暫存的補傳圖片
-
-            try {
-                const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
-                const setText = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
-
-                setVal('editDetailTitle', item['標題'] || '');
-                setVal('editDetailCategory', item['分類'] || '未分類');
-                setVal('editDetailReminderDate', item['提醒日期'] ? String(item['提醒日期']).substring(0, 10) : '');
-                setVal('editDetailSummary', item['摘要'] || '');
-                setVal('editDetailTodos', item['待辦清單'] || '');
-                setVal('editDetailTags', item['標籤'] || '');
-                setVal('editDetailRawContent', item['原始內容'] || '');
-                setText('detailTimestamp', `建立於：${item['建立時間'] || ''}`);
-
-                const media = getMediaInfo(item);
-                currentActiveMediaUrl = media.openUrl;
-                const imgContainer = document.getElementById('detailImageContainer');
-                const imgEl = document.getElementById('detailImage');
-                const ytPlayIcon = document.getElementById('ytPlayIcon');
-                const ytWrapper = document.getElementById('detailYouTubeWrapper');
-                const ytLink = document.getElementById('detailYouTubeLink');
-
-                if (media.thumbUrl) {
-                    if (imgEl) imgEl.src = media.thumbUrl;
-                    if (imgContainer) imgContainer.classList.remove('hidden');
-                    if (media.type === 'youtube') {
-                        if (ytPlayIcon) ytPlayIcon.classList.remove('hidden');
-                        if (ytLink) ytLink.href = media.openUrl;
-                        if (ytWrapper) ytWrapper.classList.remove('hidden');
-                    } else {
-                        if (ytPlayIcon) ytPlayIcon.classList.add('hidden');
-                        if (ytWrapper) ytWrapper.classList.add('hidden');
-                    }
-                } else {
-                    if (imgContainer) imgContainer.classList.add('hidden');
-                    if (ytWrapper) ytWrapper.classList.add('hidden');
-                }
-
-                const attachWrap = document.getElementById('detailAttachmentWrapper');
-                const attachLink = document.getElementById('detailAttachmentLink');
-                if (item['附件連結'] && String(item['附件連結']).trim()) {
-                    if (attachLink) attachLink.href = item['附件連結'];
-                    if (attachWrap) attachWrap.classList.remove('hidden');
-                } else {
-                    if (attachWrap) attachWrap.classList.add('hidden');
-                }
-
-                const modal = document.getElementById('detailModal');
-                if (modal) modal.classList.remove('hidden');
-            } catch (err) {
-                alert('開啟彈窗出錯：' + err.message);
-            }
+      try {
+        const payload = {
+          action: "previewAnalyze",
+          content: text,
+          apiKey: apiKey || "",
+          fileBase64: modalFileBase64
         };
 
-        function handlePreviewMediaClick() {
-            if (currentActiveMediaUrl) {
-                window.open(currentActiveMediaUrl, '_blank');
-            }
+        const res = await fetch(gasUrl, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload)
+        });
+
+        const json = await res.json();
+        if (json.status === "error") throw new Error(json.message);
+
+        const ai = json.aiResult;
+        
+        document.getElementById('prevTitle').value = ai.title || '';
+        document.getElementById('prevCategory').value = ai.category || '未分類';
+        document.getElementById('prevReminderDate').value = ai.reminder_date || '';
+        document.getElementById('prevSummary').value = ai.summary || '';
+        document.getElementById('prevTodos').value = Array.isArray(ai.action_items) ? ai.action_items.join('\n') : (ai.action_items || '');
+        document.getElementById('prevTags').value = Array.isArray(ai.tags) ? ai.tags.join(', ') : (ai.tags || '');
+
+        document.getElementById('addModal').classList.add('hidden');
+        document.getElementById('previewModal').classList.remove('hidden');
+
+      } catch (err) {
+        alert("分析失敗：" + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles text-xs"></i><span>AI 分析記憶</span>';
+      }
+    }
+
+    function closePreviewModal() {
+      document.getElementById('previewModal').classList.add('hidden');
+      document.getElementById('addModal').classList.remove('hidden');
+    }
+
+    async function confirmSaveToCloud() {
+      const gasUrl = localStorage.getItem('MEMOBOX_GAS_URL');
+      if (!gasUrl) return;
+
+      const rawContent = document.getElementById('modalInput').value.trim();
+      const title = document.getElementById('prevTitle').value.trim();
+      const category = document.getElementById('prevCategory').value;
+      const reminderDate = document.getElementById('prevReminderDate').value;
+      const summary = document.getElementById('prevSummary').value.trim();
+      const todos = document.getElementById('prevTodos').value.trim();
+      const tags = document.getElementById('prevTags').value.trim();
+
+      const btn = document.getElementById('btnConfirmSave');
+      btn.disabled = true;
+      btn.innerText = '寫入雲端中...';
+
+      try {
+        const payload = {
+          content: rawContent,
+          title: title,
+          category: category,
+          reminder_date: reminderDate,
+          summary: summary,
+          action_items: todos ? todos.split('\n') : [],
+          tags: tags ? tags.split(',').map(t => t.trim()) : [],
+          fileBase64: modalFileBase64,
+          fileName: modalFileName
+        };
+
+        const res = await fetch(gasUrl, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload)
+        });
+
+        const json = await res.json();
+        if (json.status === "error") throw new Error(json.message);
+
+        document.getElementById('previewModal').classList.add('hidden');
+        document.getElementById('modalInput').value = "";
+        clearModalFile();
+        fetchNotesFromDrive();
+
+      } catch (err) {
+        alert("存入失敗：" + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = '確認存入雲端';
+      }
+    }
+
+    async function fetchNotesFromDrive() {
+      const gasUrl = localStorage.getItem('MEMOBOX_GAS_URL');
+      if (!gasUrl) return;
+
+      try {
+        const res = await fetch(gasUrl);
+        const json = await res.json();
+        if (json.status === "success") {
+          allNotes = json.data || [];
+          updateDashboard();
+          renderNotesList(allNotes);
+        }
+      } catch (err) {
+        console.error("同步失敗：", err);
+      }
+    }
+
+    function updateDashboard() {
+      const counts = {};
+      CATEGORIES.forEach(c => counts[c] = 0);
+      let unclassified = 0;
+      let todos = [];
+      let reminders = [];
+      const todayStr = new Date().toISOString().split('T')[0];
+
+      allNotes.forEach((item, idx) => {
+        const cat = item['分類'] || '未分類';
+        if (counts[cat] !== undefined) counts[cat]++;
+        else counts['未分類']++;
+
+        if (cat === '未分類') unclassified++;
+
+        if (item['待辦清單'] && item['待辦清單'].toString().trim()) {
+          const lines = item['待辦清單'].toString().split('\n');
+          lines.forEach(l => {
+            if (l.trim()) todos.push({ noteId: item['ID'], title: item['標題'], todo: l.trim(), date: item['提醒日期'] });
+          });
         }
 
-        function closeDetailModal() {
-            document.getElementById('detailModal').classList.add('hidden');
-            currentDetailNote = null;
-            currentActiveMediaUrl = "";
-            clearDetailFile();
+        if (item['提醒日期'] && item['提醒日期'].toString().trim()) {
+          const rDate = item['提醒日期'].toString().trim().substring(0, 10);
+          const isExpired = rDate < todayStr;
+          reminders.push({
+            noteId: item['ID'],
+            title: item['標題'],
+            date: rDate,
+            isExpired: isExpired
+          });
+        }
+      });
+
+      CATEGORIES.forEach(c => {
+        const el = document.getElementById(`count-${c}`);
+        if (el) el.innerText = counts[c] || 0;
+      });
+      document.getElementById('unclassifiedCount').innerText = unclassified;
+
+      const reminderBox = document.getElementById('reminderContainer');
+      if (reminders.length > 0) {
+        reminderBox.innerHTML = reminders.map(r => `
+          <div onclick="openDetailById('${r.noteId}')" class="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-xs flex items-center justify-between cursor-pointer active:scale-[0.99] transition">
+            <div class="flex items-center gap-3">
+              <div class="${r.isExpired ? 'text-red-500' : 'text-brand-orangeText'} text-lg">
+                <i class="fa-regular fa-bell"></i>
+              </div>
+              <div>
+                <div class="text-xs font-bold text-slate-800">${r.title || '無標題'}</div>
+                <div class="text-[11px] text-slate-400">
+                  ${r.date} ${r.isExpired ? '<span class="text-red-500 font-medium">已過期</span>' : '<span class="text-emerald-600 font-medium">預定</span>'}
+                </div>
+              </div>
+            </div>
+            <span class="${r.isExpired ? 'bg-red-50 text-red-600' : 'bg-orange-50 text-orange-600'} text-[10px] px-2 py-0.5 rounded-md font-medium">
+              ${r.isExpired ? '過期' : '重要'}
+            </span>
+          </div>
+        `).join('');
+      } else {
+        reminderBox.innerHTML = `
+          <div class="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-xs text-center text-xs text-slate-400">
+            尚無提醒事項 🎉
+          </div>
+        `;
+      }
+
+      const todoBox = document.getElementById('todoContainer');
+      if (todos.length > 0) {
+        todoBox.innerHTML = todos.map((t, i) => `
+          <div class="flex items-start gap-2.5 py-1 text-left">
+            <input type="checkbox" id="chk_${i}" class="mt-0.5 rounded text-brand focus:ring-0">
+            <label for="chk_${i}" class="text-xs text-slate-700 leading-snug cursor-pointer">
+              <span class="font-semibold text-slate-900">${t.title}：</span>${t.todo}
+              ${t.date ? `<span class="text-[10px] text-slate-400 block mt-0.5"><i class="fa-regular fa-clock"></i> 期限：${t.date}</span>` : ''}
+            </label>
+          </div>
+        `).join('');
+      } else {
+        todoBox.innerHTML = '沒有待辦任務 🎉';
+      }
+    }
+
+    function renderNotesList(list) {
+      const wrapper = document.getElementById('cardsWrapper');
+      wrapper.innerHTML = '';
+      currentDisplayList = list || [];
+
+      if (!list || list.length === 0) {
+        wrapper.innerHTML = '<div class="text-center text-xs text-slate-400 py-6">目前沒有找到符合條件的記憶資料</div>';
+        return;
+      }
+
+      list.forEach((item, index) => {
+        const media = getMediaInfo(item);
+        const card = document.createElement('div');
+        card.className = "bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs space-y-2 active:scale-[0.98] hover:border-brand/60 transition cursor-pointer select-none";
+        
+        card.addEventListener('click', function() {
+          openDetailById(item['ID'] || index);
+        });
+
+        let imgHtml = '';
+        if (media.thumbUrl) {
+          imgHtml = `
+            <div class="w-full h-40 rounded-xl overflow-hidden mb-2 bg-slate-100 relative pointer-events-none">
+              <img src="${media.thumbUrl}" alt="縮圖" class="w-full h-full object-cover" loading="lazy">
+              ${media.type === 'youtube' ? `
+                <div class="absolute inset-0 bg-black/20 flex items-center justify-center">
+                  <i class="fa-brands fa-youtube text-red-600 bg-white rounded-xl px-2 py-0.5 text-2xl shadow-md"></i>
+                </div>
+              ` : ''}
+            </div>
+          `;
         }
 
-        async function deleteCurrentNote() {
-            if (!currentDetailNote || !currentDetailNote['ID']) return;
-            if (!confirm(`確定要刪除這筆記憶嗎？\n「${currentDetailNote['標題']}」`)) return;
-            const gasUrl = localStorage.getItem('MEMOBOX_GAS_URL');
-            if (!gasUrl) return;
-            try {
-                const payload = { action: "deleteNote", id: currentDetailNote['ID'] };
-                const res = await fetch(gasUrl, {
-                    method: "POST",
-                    headers: { "Content-Type": "text/plain;charset=utf-8" },
-                    body: JSON.stringify(payload)
-                });
-                const json = await res.json();
-                if (json.status === "success") {
-                    allNotes = allNotes.filter(n => String(n['ID']) !== String(currentDetailNote['ID']));
-                    updateDashboard();
-                    renderNotesList(allNotes);
-                    alert('記憶已刪除成功！');
-                    closeDetailModal();
-                } else {
-                    alert('刪除失敗，找不到該筆資料');
-                }
-            } catch (err) {
-                alert('連線失敗：' + err.message);
-            }
+        let todoHtml = '';
+        if (item['待辦清單']) {
+          todoHtml = `
+            <div class="bg-amber-50/70 border border-amber-200/60 rounded-xl p-2 text-[11px] text-amber-800 pointer-events-none">
+              📌 <strong>待辦：</strong>\n${item['待辦清單']}
+            </div>
+          `;
         }
 
-        async function syncCurrentToCalendar() {
-            if (!currentDetailNote) return;
-            const title = document.getElementById('editDetailTitle').value.trim() || currentDetailNote['標題'];
-            const todos = document.getElementById('editDetailTodos').value.trim() || currentDetailNote['待辦清單'];
-            const rDate = document.getElementById('editDetailReminderDate').value || currentDetailNote['提醒日期'];
-            const summary = document.getElementById('editDetailSummary').value.trim() || currentDetailNote['摘要'];
-            const gasUrl = localStorage.getItem('MEMOBOX_GAS_URL');
-            if (!gasUrl) return;
-            const btn = document.getElementById('btnSyncCal');
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 加入中...';
-            const descText = `【AI記憶夾待辦】\n${todos ? todos : '無特別待辦'}\n\n重點摘要：\n${summary}`;
-            try {
-                const payload = { action: "syncToCalendar", title: title, description: descText, date: rDate };
-                const res = await fetch(gasUrl, {
-                    method: "POST",
-                    headers: { "Content-Type": "text/plain;charset=utf-8" },
-                    body: JSON.stringify(payload)
-                });
-                const json = await res.json();
-                if (json.status === "success") {
-                    alert(`已成功將「${title}」加入您的 Google 行事曆！`);
-                } else {
-                    alert('同步失敗：' + (json.message || '未知錯誤'));
-                }
-            } catch (e) {
-                alert('加入失敗：' + e.message);
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-regular fa-calendar-plus"></i> 加到日曆';
-            }
+        card.innerHTML = `
+          ${imgHtml}
+          <div class="flex items-center justify-between pointer-events-none">
+            <span class="text-[10px] px-2 py-0.5 rounded-md bg-brand-light text-brand font-medium">${item['分類'] || '未分類'}</span>
+            <span class="text-[10px] text-slate-400">${item['建立時間'] ? String(item['建立時間']).substring(5, 16) : ''}</span>
+          </div>
+          <h4 class="text-sm font-bold text-slate-800 pointer-events-none">${item['標題'] || '無標題'}</h4>
+          <p class="text-xs text-slate-600 line-clamp-2 pointer-events-none">${item['摘要'] || item['原始內容'] || ''}</p>
+          ${todoHtml}
+          <div class="flex items-center justify-between pt-1 text-[11px] text-slate-400 pointer-events-none">
+            <span>${item['提醒日期'] ? `⏰ ${item['提醒日期']}` : ''}</span>
+            <span class="text-brand flex items-center gap-1 text-[11px]">查看 / 編輯 <i class="fa-solid fa-chevron-right text-[9px]"></i></span>
+          </div>
+        `;
+
+        wrapper.appendChild(card);
+      });
+    }
+
+    window.openDetailById = function(identifier) {
+      let item = allNotes.find(n => String(n['ID']) === String(identifier));
+      if (!item) {
+        const idx = parseInt(identifier, 10);
+        if (!isNaN(idx) && allNotes[idx]) item = allNotes[idx];
+      }
+      if (!item) {
+        alert('無法讀取此筆資料內容');
+        return;
+      }
+      currentDetailNote = item;
+
+      try {
+        const setVal = (id, val) => {
+          const el = document.getElementById(id);
+          if (el) el.value = val;
+        };
+        const setText = (id, val) => {
+          const el = document.getElementById(id);
+          if (el) el.innerText = val;
+        };
+
+        setVal('editDetailTitle', item['標題'] || '');
+        setVal('editDetailCategory', item['分類'] || '未分類');
+        setVal('editDetailReminderDate', item['提醒日期'] ? String(item['提醒日期']).substring(0, 10) : '');
+        setVal('editDetailSummary', item['摘要'] || '');
+        setVal('editDetailTodos', item['待辦清單'] || '');
+        setVal('editDetailTags', item['標籤'] || '');
+        setVal('editDetailRawContent', item['原始內容'] || '');
+        setText('detailTimestamp', `建立於：${item['建立時間'] || ''}`);
+
+        const media = getMediaInfo(item);
+        currentActiveMediaUrl = media.openUrl;
+
+        const imgContainer = document.getElementById('detailImageContainer');
+        const imgEl = document.getElementById('detailImage');
+        const ytPlayIcon = document.getElementById('ytPlayIcon');
+        const ytWrapper = document.getElementById('detailYouTubeWrapper');
+        const ytLink = document.getElementById('detailYouTubeLink');
+
+        if (media.thumbUrl) {
+          if (imgEl) imgEl.src = media.thumbUrl;
+          if (imgContainer) imgContainer.classList.remove('hidden');
+          if (media.type === 'youtube') {
+            if (ytPlayIcon) ytPlayIcon.classList.remove('hidden');
+            if (ytLink) ytLink.href = media.openUrl;
+            if (ytWrapper) ytWrapper.classList.remove('hidden');
+          } else {
+            if (ytPlayIcon) ytPlayIcon.classList.add('hidden');
+            if (ytWrapper) ytWrapper.classList.add('hidden');
+          }
+        } else {
+          if (imgContainer) imgContainer.classList.add('hidden');
+          if (ytWrapper) ytWrapper.classList.add('hidden');
         }
 
-        async function syncCurrentToTasks() {
-            if (!currentDetailNote) return;
-            const title = document.getElementById('editDetailTitle').value.trim() || currentDetailNote['標題'];
-            const todos = document.getElementById('editDetailTodos').value.trim() || currentDetailNote['待辦清單'];
-            const rDate = document.getElementById('editDetailReminderDate').value || currentDetailNote['提醒日期'];
-            const summary = document.getElementById('editDetailSummary').value.trim() || currentDetailNote['摘要'];
-            const gasUrl = localStorage.getItem('MEMOBOX_GAS_URL');
-            if (!gasUrl) return;
-            const btn = document.getElementById('btnSyncTasks');
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 加入中...';
-            const notesText = `【待辦事項】\n${todos ? todos : '無詳細待辦'}\n\n重點摘要：\n${summary}`;
-            try {
-                const payload = { action: "syncToTasks", title: `[記憶夾] ${title}`, notes: notesText, date: rDate };
-                const res = await fetch(gasUrl, {
-                    method: "POST",
-                    headers: { "Content-Type": "text/plain;charset=utf-8" },
-                    body: JSON.stringify(payload)
-                });
-                const json = await res.json();
-                if (json.status === "success") {
-                    alert(`已成功將「${title}」直接建立到您的 Google 工作 (Tasks) 中！`);
-                } else {
-                    alert('建立失敗：' + (json.message || '未知錯誤'));
-                }
-            } catch (e) {
-                alert('連線失敗：' + e.message);
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-list-check"></i> 加到工作';
-            }
+        const attachWrap = document.getElementById('detailAttachmentWrapper');
+        const attachLink = document.getElementById('detailAttachmentLink');
+        if (item['附件連結'] && String(item['附件連結']).trim()) {
+          if (attachLink) attachLink.href = item['附件連結'];
+          if (attachWrap) attachWrap.classList.remove('hidden');
+        } else {
+          if (attachWrap) attachWrap.classList.add('hidden');
         }
 
-        function formatGoogleDriveUrl(url) {
-            if (!url || typeof url !== 'string') return '';
-            const driveRegex = /(?:\/file\/d\/|id=)([a-zA-Z0-9_-]{25,})/;
-            const match = url.match(driveRegex);
-            if (match && match[1]) {
-                return `https://lh3.googleusercontent.com/d/${match[1]}`;
-            }
-            return url;
+        const modal = document.getElementById('detailModal');
+        if (modal) modal.classList.remove('hidden');
+      } catch (err) {
+        alert('開啟彈窗出錯：' + err.message);
+      }
+    };
+
+    function handlePreviewMediaClick() {
+      if (currentActiveMediaUrl) {
+        window.open(currentActiveMediaUrl, '_blank');
+      }
+    }
+
+    function closeDetailModal() {
+      document.getElementById('detailModal').classList.add('hidden');
+      currentDetailNote = null;
+      currentActiveMediaUrl = "";
+    }
+
+    async function deleteCurrentNote() {
+      if (!currentDetailNote || !currentDetailNote['ID']) return;
+      if (!confirm(`確定要刪除這筆記憶嗎？\n「${currentDetailNote['標題']}」`)) return;
+
+      const gasUrl = localStorage.getItem('MEMOBOX_GAS_URL');
+      if (!gasUrl) return;
+
+      try {
+        const payload = {
+          action: "deleteNote",
+          id: currentDetailNote['ID']
+        };
+
+        const res = await fetch(gasUrl, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload)
+        });
+        const json = await res.json();
+
+        if (json.status === "success") {
+          allNotes = allNotes.filter(n => String(n['ID']) !== String(currentDetailNote['ID']));
+          updateDashboard();
+          renderNotesList(allNotes);
+          alert('記憶已刪除成功！');
+          closeDetailModal();
+        } else {
+          alert('刪除失敗，找不到該筆資料');
         }
+      } catch (err) {
+        alert('連線失敗：' + err.message);
+      }
+    }
 
-        async function getBase64ImageFromUrl(imageUrl) {
-            if (!imageUrl) return '';
-            if (imageUrl.startsWith('data:image')) return imageUrl;
-            const convertedUrl = formatGoogleDriveUrl(imageUrl);
-            return new Promise((resolve) => {
-                const img = new Image();
-                img.crossOrigin = 'anonymous';
-                img.onload = () => {
-                    try {
-                        const canvas = document.createElement('canvas');
-                        canvas.width = img.naturalWidth || img.width;
-                        canvas.height = img.naturalHeight || img.height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0);
-                        resolve(canvas.toDataURL('image/jpeg', 0.85));
-                    } catch (err) {
-                        resolve(convertedUrl);
-                    }
-                };
-                img.onerror = () => { resolve(convertedUrl); };
-                img.src = convertedUrl;
-            });
+    // 同步到 Google 日曆
+    async function syncCurrentToCalendar() {
+      if (!currentDetailNote) return;
+      const title = document.getElementById('editDetailTitle').value.trim() || currentDetailNote['標題'];
+      const todos = document.getElementById('editDetailTodos').value.trim() || currentDetailNote['待辦清單'];
+      const rDate = document.getElementById('editDetailReminderDate').value || currentDetailNote['提醒日期'];
+      const summary = document.getElementById('editDetailSummary').value.trim() || currentDetailNote['摘要'];
+
+      const gasUrl = localStorage.getItem('MEMOBOX_GAS_URL');
+      if (!gasUrl) return;
+
+      const btn = document.getElementById('btnSyncCal');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 加入中...';
+
+      const descText = `【AI記憶夾待辦】\n${todos ? todos : '無特別待辦'}\n\n重點摘要：\n${summary}`;
+
+      try {
+        const payload = {
+          action: "syncToCalendar",
+          title: title,
+          description: descText,
+          date: rDate
+        };
+
+        const res = await fetch(gasUrl, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload)
+        });
+        const json = await res.json();
+
+        if (json.status === "success") {
+          alert(`已成功將「${title}」加入您的 Google 行事曆！`);
+        } else {
+          alert('同步失敗：' + (json.message || '未知錯誤'));
         }
+      } catch (e) {
+        alert('加入失敗：' + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-regular fa-calendar-plus"></i> 加到日曆';
+      }
+    }
 
-        async function exportDataAsPDF() {
-            if (!allNotes || allNotes.length === 0) {
-                alert('目前無任何記憶資料可匯出！');
-                return;
-            }
-            const btn = event?.currentTarget;
-            const originalText = btn ? btn.innerHTML : '';
-            if (btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 正在載入相片並匯出 PDF...';
-            try {
-                const printArea = document.createElement('div');
-                printArea.style.padding = '20px';
-                printArea.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-                printArea.style.color = '#1e293b';
-                printArea.style.background = '#ffffff';
-                const todayStr = new Date().toISOString().substring(0, 10);
-                let html = `
-                    <div style="border-bottom: 2px solid #388E6C; padding-bottom: 10px; margin-bottom: 16px;">
-                        <h1 style="font-size: 20px; font-weight: bold; color: #388E6C; margin: 0;">AI 記憶夾 - 完整資料備份</h1>
-                        <p style="font-size: 11px; color: #64748b; margin: 4px 0 0 0;">匯出日期：${todayStr} ｜ 總筆數：${allNotes.length} 筆</p>
-                    </div>
-                    <div style="display: flex; flex-direction: column; gap: 14px;">
-                `;
-                for (let idx = 0; idx < allNotes.length; idx++) {
-                    const n = allNotes[idx];
-                    const rawPhotoUrl = n['附件連結'] || n['圖片'] || n['相片'] || n['照片'] || n['image'] || n['imageUrl'] || n['圖片網址'] || n['Photo'] || '';
-                    let imgHtml = '';
-                    if (rawPhotoUrl) {
-                        const base64Data = await getBase64ImageFromUrl(rawPhotoUrl);
-                        const finalSrc = base64Data || formatGoogleDriveUrl(rawPhotoUrl);
-                        imgHtml = `
-                            <div style="margin-top: 8px;">
-                                <img src="${finalSrc}" crossorigin="anonymous" style="max-width: 260px; max-height: 220px; border-radius: 6px; border: 1px solid #cbd5e1; object-fit: contain; display: block;" />
-                            </div>
-                        `;
-                    }
-                    html += `
-                        <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; background: #ffffff; page-break-inside: avoid;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                                <strong style="font-size: 13px; color: #0f172a;">${idx + 1}. ${n['標題'] || '無標題'}</strong>
-                                <span style="font-size: 10px; background: #E8F5E9; color: #2B6F54; padding: 2px 6px; border-radius: 4px; font-weight: bold;">
-                                    ${n['分類'] || '未分類'}
-                                </span>
-                            </div>
-                            <p style="font-size: 11px; color: #475569; margin: 4px 0; line-height: 1.5;">
-                                ${n['摘要'] || n['原始內容'] || '無內容'}
-                            </p>
-                            ${imgHtml}
-                            ${n['待辦清單'] ? `<div style="font-size: 10px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; margin-top: 6px;">📌 <strong>待辦：</strong> ${String(n['待辦清單']).replace(/\n/g, '、')}</div>` : ''}
-                            ${n['提醒日期'] ? `<div style="font-size: 10px; color: #ea580c; margin-top: 4px;">⏰ 提醒日期：${n['提醒日期']}</div>` : ''}
-                        </div>
-                    `;
-                }
-                html += `</div>`;
-                printArea.innerHTML = html;
-                const opt = {
-                    margin: [10, 10, 10, 10],
-                    filename: `AI記憶夾備份_${todayStr}.pdf`,
-                    image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2, useCORS: true, allowTaint: true },
-                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-                };
-                await html2pdf().set(opt).from(printArea).save();
-                alert('PDF 備份已成功下載！');
-            } catch (err) {
-                alert('PDF 匯出失敗：' + err.message);
-            } finally {
-                if (btn) btn.innerHTML = originalText;
-            }
+    // 核心新增：直接將待辦事項寫入 Google 工作 (Tasks)
+    async function syncCurrentToTasks() {
+      if (!currentDetailNote) return;
+      const title = document.getElementById('editDetailTitle').value.trim() || currentDetailNote['標題'];
+      const todos = document.getElementById('editDetailTodos').value.trim() || currentDetailNote['待辦清單'];
+      const rDate = document.getElementById('editDetailReminderDate').value || currentDetailNote['提醒日期'];
+      const summary = document.getElementById('editDetailSummary').value.trim() || currentDetailNote['摘要'];
+
+      const gasUrl = localStorage.getItem('MEMOBOX_GAS_URL');
+      if (!gasUrl) return;
+
+      const btn = document.getElementById('btnSyncTasks');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 加入中...';
+
+      const notesText = `【待辦事項】\n${todos ? todos : '無詳細待辦'}\n\n重點摘要：\n${summary}`;
+
+      try {
+        const payload = {
+          action: "syncToTasks",
+          title: `[記憶夾] ${title}`,
+          notes: notesText,
+          date: rDate
+        };
+
+        const res = await fetch(gasUrl, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload)
+        });
+        const json = await res.json();
+
+        if (json.status === "success") {
+          alert(`已成功將「${title}」直接建立到您的 Google 工作 (Tasks) 中！`);
+        } else {
+          alert('建立失敗：' + (json.message || '未知錯誤'));
         }
+      } catch (e) {
+        alert('連線失敗：' + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-list-check"></i> 加到工作';
+      }
+    }
 
-        async function saveFullNoteEdit() {
-            if (!currentDetailNote || !currentDetailNote['ID']) return;
-            const gasUrl = localStorage.getItem('MEMOBOX_GAS_URL');
-            if (!gasUrl) return;
-            const title = document.getElementById('editDetailTitle').value.trim();
-            const category = document.getElementById('editDetailCategory').value;
-            const reminderDate = document.getElementById('editDetailReminderDate').value;
-            const summary = document.getElementById('editDetailSummary').value.trim();
-            const todos = document.getElementById('editDetailTodos').value.trim();
-            const tags = document.getElementById('editDetailTags').value.trim();
-            const rawContent = document.getElementById('editDetailRawContent').value.trim();
+// 專門解析並轉換 Google Drive 連結為可直接讀取的圖片網址
+function formatGoogleDriveUrl(url) {
+  if (!url || typeof url !== 'string') return '';
+  const driveRegex = /(?:\/file\/d\/|id=)([a-zA-Z0-9_-]{25,})/;
+  const match = url.match(driveRegex);
+  if (match && match[1]) {
+    return `https://lh3.googleusercontent.com/d/${match[1]}`;
+  }
+  return url;
+}
 
-            const btn = document.getElementById('btnSaveFullEdit');
-            btn.disabled = true;
-            btn.innerText = detailFileBase64 ? '上傳相片並儲存中...' : '儲存中...';
-            try {
-                const payload = {
-                    action: "updateFullNote",
-                    id: currentDetailNote['ID'],
-                    title: title,
-                    category: category,
-                    reminder_date: reminderDate,
-                    summary: summary,
-                    action_items: todos,
-                    tags: tags,
-                    content: rawContent,
-                    fileBase64: detailFileBase64, // 若有補傳相片會一併送出
-                    fileName: detailFileName
-                };
-                const res = await fetch(gasUrl, {
-                    method: "POST",
-                    headers: { "Content-Type": "text/plain;charset=utf-8" },
-                    body: JSON.stringify(payload)
-                });
-                const json = await res.json();
-                if (json.status === "success") {
-                    alert('修改與相片儲存成功！');
-                    closeDetailModal();
-                    await fetchNotesFromDrive(); // 重新向雲端同步最新的圖片網址與資料
-                } else {
-                    alert('儲存失敗，找不到該筆資料');
-                }
-            } catch (err) {
-                alert('連線失敗：' + err.message);
-            } finally {
-                btn.disabled = false;
-                btn.innerText = '儲存所有修改';
-            }
+// 輔助函式：將遠端圖片 URL 轉為 Base64 字串
+async function getBase64ImageFromUrl(imageUrl) {
+  if (!imageUrl) return '';
+  if (imageUrl.startsWith('data:image')) return imageUrl;
+  
+  const convertedUrl = formatGoogleDriveUrl(imageUrl);
+
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth || img.width;
+        canvas.height = img.naturalHeight || img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/jpeg', 0.85));
+      } catch (err) {
+        resolve(convertedUrl);
+      }
+    };
+    img.onerror = () => {
+      resolve(convertedUrl);
+    };
+    img.src = convertedUrl;
+  });
+}
+
+async function exportDataAsPDF() {
+  if (!allNotes || allNotes.length === 0) {
+    alert('目前無任何記憶資料可匯出！');
+    return;
+  }
+
+  const btn = event?.currentTarget;
+  const originalText = btn ? btn.innerHTML : '';
+  if (btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 正在載入相片並匯出 PDF...';
+
+  try {
+    const printArea = document.createElement('div');
+    printArea.style.padding = '20px';
+    printArea.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    printArea.style.color = '#1e293b';
+    printArea.style.background = '#ffffff';
+
+    const todayStr = new Date().toISOString().substring(0, 10);
+
+    let html = `
+      <div style="border-bottom: 2px solid #388E6C; padding-bottom: 10px; margin-bottom: 16px;">
+        <h1 style="font-size: 20px; font-weight: bold; color: #388E6C; margin: 0;">AI 記憶夾 - 完整資料備份</h1>
+        <p style="font-size: 11px; color: #64748b; margin: 4px 0 0 0;">匯出日期：${todayStr} ｜ 總筆數：${allNotes.length} 筆</p>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+    `;
+
+    for (let idx = 0; idx < allNotes.length; idx++) {
+      const n = allNotes[idx];
+      const rawPhotoUrl = n['附件連結'] ||n['圖片'] || n['相片'] || n['照片'] || n['image'] || n['imageUrl'] || n['圖片網址'] || n['Photo'] || '';
+      
+      let imgHtml = '';
+      if (rawPhotoUrl) {
+        const base64Data = await getBase64ImageFromUrl(rawPhotoUrl);
+        const finalSrc = base64Data || formatGoogleDriveUrl(rawPhotoUrl);
+        imgHtml = `
+          <div style="margin-top: 8px;">
+            <img src="${finalSrc}" crossorigin="anonymous" style="max-width: 260px; max-height: 220px; border-radius: 6px; border: 1px solid #cbd5e1; object-fit: contain; display: block;" />
+          </div>
+        `;
+      }
+
+      html += `
+        <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; background: #ffffff; page-break-inside: avoid;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <strong style="font-size: 13px; color: #0f172a;">${idx + 1}. ${n['標題'] || '無標題'}</strong>
+            <span style="font-size: 10px; background: #E8F5E9; color: #2B6F54; padding: 2px 6px; border-radius: 4px; font-weight: bold;">
+              ${n['分類'] || '未分類'}
+            </span>
+          </div>
+          <p style="font-size: 11px; color: #475569; margin: 4px 0; line-height: 1.5;">
+            ${n['摘要'] || n['原始內容'] || '無內容'}
+          </p>
+          ${imgHtml}
+          ${n['待辦清單'] ? `<div style="font-size: 10px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; margin-top: 6px;">📌 <strong>待辦：</strong> ${String(n['待辦清單']).replace(/\n/g, '、')}</div>` : ''}
+          ${n['提醒日期'] ? `<div style="font-size: 10px; color: #ea580c; margin-top: 4px;">⏰ 提醒日期：${n['提醒日期']}</div>` : ''}
+        </div>
+      `;
+    }
+
+    html += `</div>`;
+    printArea.innerHTML = html;
+
+    const opt = {
+      margin: [10, 10, 10, 10],
+      filename: `AI記憶夾備份_${todayStr}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, allowTaint: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    await html2pdf().set(opt).from(printArea).save();
+    alert('PDF 備份已成功下載！');
+  } catch (err) {
+    alert('PDF 匯出失敗：' + err.message);
+  } finally {
+    if (btn) btn.innerHTML = originalText;
+  }
+}
+    async function saveFullNoteEdit() {
+      if (!currentDetailNote || !currentDetailNote['ID']) return;
+      const gasUrl = localStorage.getItem('MEMOBOX_GAS_URL');
+      if (!gasUrl) return;
+
+      const title = document.getElementById('editDetailTitle').value.trim();
+      const category = document.getElementById('editDetailCategory').value;
+      const reminderDate = document.getElementById('editDetailReminderDate').value;
+      const summary = document.getElementById('editDetailSummary').value.trim();
+      const todos = document.getElementById('editDetailTodos').value.trim();
+      const tags = document.getElementById('editDetailTags').value.trim();
+      const rawContent = document.getElementById('editDetailRawContent').value.trim();
+
+      const btn = document.getElementById('btnSaveFullEdit');
+      btn.disabled = true;
+      btn.innerText = '儲存中...';
+
+      try {
+        const payload = {
+          action: "updateFullNote",
+          id: currentDetailNote['ID'],
+          title: title,
+          category: category,
+          reminder_date: reminderDate,
+          summary: summary,
+          action_items: todos,
+          tags: tags,
+          content: rawContent
+        };
+
+        const res = await fetch(gasUrl, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload)
+        });
+        const json = await res.json();
+
+        if (json.status === "success") {
+          currentDetailNote['標題'] = title;
+          currentDetailNote['分類'] = category;
+          currentDetailNote['提醒日期'] = reminderDate;
+          currentDetailNote['摘要'] = summary;
+          currentDetailNote['待辦清單'] = todos;
+          currentDetailNote['標籤'] = tags;
+          currentDetailNote['原始內容'] = rawContent;
+
+          updateDashboard();
+          renderNotesList(allNotes);
+          alert('修改儲存成功！');
+          closeDetailModal();
+        } else {
+          alert('儲存失敗，找不到該筆資料');
         }
+      } catch (err) {
+        alert('連線失敗：' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = '儲存所有修改';
+      }
+    }
 
-        function filterByCategory(cat) {
-            document.getElementById('aiDirectAnswerWrapper').classList.add('hidden');
-            document.getElementById('currentFilterTitle').innerText = `分類：${cat}`;
-            const filtered = allNotes.filter(n => (n['分類'] || '未分類') === cat);
-            renderNotesList(filtered);
-            window.scrollTo({ top: document.getElementById('notesSection').offsetTop - 60, behavior: 'smooth' });
-        }
+    function filterByCategory(cat) {
+      document.getElementById('aiDirectAnswerWrapper').classList.add('hidden');
+      document.getElementById('currentFilterTitle').innerText = `分類：${cat}`;
+      const filtered = allNotes.filter(n => (n['分類'] || '未分類') === cat);
+      renderNotesList(filtered);
+      window.scrollTo({ top: document.getElementById('notesSection').offsetTop - 60, behavior: 'smooth' });
+    }
 
-        function filterByReminders() {
-            document.getElementById('aiDirectAnswerWrapper').classList.add('hidden');
-            document.getElementById('currentFilterTitle').innerText = "全部提醒與待辦事項";
-            const filtered = allNotes.filter(n => (n['提醒日期'] && String(n['提醒日期']).trim()) || (n['待辦清單'] && String(n['待辦清單']).trim()));
-            renderNotesList(filtered);
-            window.scrollTo({ top: document.getElementById('notesSection').offsetTop - 60, behavior: 'smooth' });
-        }
+    function filterByReminders() {
+      document.getElementById('aiDirectAnswerWrapper').classList.add('hidden');
+      document.getElementById('currentFilterTitle').innerText = "全部提醒與待辦事項";
+      const filtered = allNotes.filter(n => (n['提醒日期'] && String(n['提醒日期']).trim()) || (n['待辦清單'] && String(n['待辦清單']).trim()));
+      renderNotesList(filtered);
+      window.scrollTo({ top: document.getElementById('notesSection').offsetTop - 60, behavior: 'smooth' });
+    }
 
-        function showAllNotes() {
-            document.getElementById('aiDirectAnswerWrapper').classList.add('hidden');
-            document.getElementById('currentFilterTitle').innerText = "全部記憶卡片";
-            renderNotesList(allNotes);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
+    function showAllNotes() {
+      document.getElementById('aiDirectAnswerWrapper').classList.add('hidden');
+      document.getElementById('currentFilterTitle').innerText = "全部記憶卡片";
+      renderNotesList(allNotes);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 
-        function handleSearchKey(e) {
-            if (e.key === 'Enter') triggerSmartAISearch();
-        }
+    function handleSearchKey(e) {
+      if (e.key === 'Enter') triggerSmartAISearch();
+    }
 
-        async function triggerSmartAISearch(customQuery) {
-            const q = (customQuery || document.getElementById('aiSearchInput').value || '').trim();
-            if (!q) {
-                showAllNotes();
-                return;
-            }
-            const apiKey = localStorage.getItem('MEMOBOX_GEMINI_KEY');
-            const answerWrapper = document.getElementById('aiDirectAnswerWrapper');
-            const answerText = document.getElementById('aiDirectAnswerText');
-            const titleEl = document.getElementById('currentFilterTitle');
-            titleEl.innerText = `AI 正在檢索：「${q}」...`;
-            answerWrapper.classList.add('hidden');
+    async function triggerSmartAISearch(customQuery) {
+      const q = (customQuery || document.getElementById('aiSearchInput').value || '').trim();
+      if (!q) {
+        showAllNotes();
+        return;
+      }
 
-            if (apiKey && allNotes.length > 0) {
-                try {
-                    const notesContext = allNotes.slice(0, 30).map(n =>
-                        `[ID: ${n['ID']}] 標題: ${n['標題'] || ''} | 分類: ${n['分類'] || ''} | 摘要: ${n['摘要'] || ''} | 待辦: ${n['待辦清單'] || ''} | 提醒日: ${n['提醒日期'] || ''}`
-                    ).join('\n');
-                    const prompt = `你是一個個人的第二大腦記憶庫管理員。使用者提問：「${q}」。
+      const apiKey = localStorage.getItem('MEMOBOX_GEMINI_KEY');
+      const answerWrapper = document.getElementById('aiDirectAnswerWrapper');
+      const answerText = document.getElementById('aiDirectAnswerText');
+      const titleEl = document.getElementById('currentFilterTitle');
+
+      titleEl.innerText = `AI 正在檢索：「${q}」...`;
+      answerWrapper.classList.add('hidden');
+
+      if (apiKey && allNotes.length > 0) {
+        try {
+          const notesContext = allNotes.slice(0, 30).map(n => 
+            `[ID: ${n['ID']}] 標題: ${n['標題'] || ''} | 分類: ${n['分類'] || ''} | 摘要: ${n['摘要'] || ''} | 待辦: ${n['待辦清單'] || ''} | 提醒日: ${n['提醒日期'] || ''}`
+          ).join('\n');
+
+          const prompt = `你是一個個人的第二大腦記憶庫管理員。使用者提問：「${q}」。
 以下是記憶庫中現有的資料：
 ${notesContext}
+
 請根據使用者的問題，完成兩件事：
 1. 用親切繁體中文直接回答使用者的問題（25字以內）。
 2. 列出與該問題最相關的筆記 [ID] 清單。
-請務必嚴格回傳純 JSON 格式（嚴禁 markdown 標籤）：
-{"answer": "一句話直接回答", "matched_ids": ["ID字串"]}`;
 
-                    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`;
-                    const res = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                    });
-                    if (res.ok) {
-                        const data = await res.json();
-                        const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-                        const clean = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
-                        const aiResult = JSON.parse(clean);
-                        if (aiResult.answer) {
-                            answerText.innerText = aiResult.answer;
-                            answerWrapper.classList.remove('hidden');
-                        }
-                        if (Array.isArray(aiResult.matched_ids) && aiResult.matched_ids.length > 0) {
-                            const matchedNotes = allNotes.filter(n => aiResult.matched_ids.includes(String(n['ID'])));
-                            if (matchedNotes.length > 0) {
-                                titleEl.innerText = `AI 語意搜尋：「${q}」（找到 ${matchedNotes.length} 筆相關）`;
-                                renderNotesList(matchedNotes);
-                                window.scrollTo({ top: document.getElementById('notesSection').offsetTop - 60, behavior: 'smooth' });
-                                return;
-                            }
-                        }
-                    }
-                } catch (err) {
-                    console.warn("AI 語意檢索轉降級為模糊比對:", err);
-                }
+請務必嚴格回傳純 JSON 格式（嚴禁 markdown 標籤）：
+{
+  "answer": "一句話直接回答",
+  "matched_ids": ["ID字串"]
+}`;
+
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`;
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            const clean = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+            const aiResult = JSON.parse(clean);
+
+            if (aiResult.answer) {
+              answerText.innerText = aiResult.answer;
+              answerWrapper.classList.remove('hidden');
             }
 
-            const tokens = q.toLowerCase().split(/\s+/).filter(Boolean);
-            const filtered = allNotes.filter(n => {
-                const fullContent = [
-                    n['標題'], n['摘要'], n['分類'], n['標籤'], n['待辦清單'], n['原始內容'], n['提醒日期']
-                ].join(' ').toLowerCase();
-                return tokens.some(tok => fullContent.includes(tok));
-            });
-            titleEl.innerText = `搜尋結果：「${q}」（找到 ${filtered.length} 筆）`;
-            renderNotesList(filtered);
-            window.scrollTo({ top: document.getElementById('notesSection').offsetTop - 60, behavior: 'smooth' });
+            if (Array.isArray(aiResult.matched_ids) && aiResult.matched_ids.length > 0) {
+              const matchedNotes = allNotes.filter(n => aiResult.matched_ids.includes(String(n['ID'])));
+              if (matchedNotes.length > 0) {
+                titleEl.innerText = `AI 語意搜尋：「${q}」（找到 ${matchedNotes.length} 筆相關）`;
+                renderNotesList(matchedNotes);
+                window.scrollTo({ top: document.getElementById('notesSection').offsetTop - 60, behavior: 'smooth' });
+                return;
+              }
+            }
+          }
+        } catch (err) {
+          console.warn("AI 語意檢索轉降級為模糊比對:", err);
         }
+      }
 
-        function searchNotes() {
-            triggerSmartAISearch();
-        }
-    </script>
+      const tokens = q.toLowerCase().split(/\s+/).filter(Boolean);
+      const filtered = allNotes.filter(n => {
+        const fullContent = [
+          n['標題'], n['摘要'], n['分類'], n['標籤'], n['待辦清單'], n['原始內容'], n['提醒日期']
+        ].join(' ').toLowerCase();
+
+        return tokens.some(tok => fullContent.includes(tok));
+      });
+
+      titleEl.innerText = `搜尋結果：「${q}」（找到 ${filtered.length} 筆）`;
+      renderNotesList(filtered);
+      window.scrollTo({ top: document.getElementById('notesSection').offsetTop - 60, behavior: 'smooth' });
+    }
+
+    function searchNotes() {
+      triggerSmartAISearch();
+    }
+  </script>
 </body>
 </html>

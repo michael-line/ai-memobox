@@ -769,6 +769,9 @@
 
     async function requestAIPreview() {
       const text = document.getElementById('modalInput').value.trim();
+const preTitle = document.getElementById('preTitleInput').value.trim();
+      const preCategory = document.getElementById('preCategorySelect').value;
+      
       const gasUrl = localStorage.getItem('MEMOBOX_GAS_URL');
       const apiKey = localStorage.getItem('MEMOBOX_GEMINI_KEY');
 
@@ -787,12 +790,14 @@
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>AI 分析中...</span>';
 
       try {
-        const payload = {
-          action: "previewAnalyze",
-          content: text,
-          apiKey: apiKey || "",
-          fileBase64: modalFileBase64
-        };
+       const payload = {
+        action: "previewAnalyze",
+        content: text,
+        preTitle: preTitle,
+        preCategory: preCategory,
+        apiKey: apiKey || "",
+        fileBase64: modalFileBase64
+      };
 
         const res = await fetch(gasUrl, {
           method: "POST",
@@ -877,6 +882,9 @@
 
         document.getElementById('previewModal').classList.add('hidden');
         document.getElementById('modalInput').value = "";
+document.getElementById('preTitleInput').value = "";
+      document.getElementById('preCategorySelect').value = "";
+        
         clearModalFile();
         await fetchNotesFromDrive();
 

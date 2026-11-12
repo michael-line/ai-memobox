@@ -6,7 +6,7 @@
   <title>AI 記憶夾</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
- <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -101,7 +101,7 @@
           <h4 class="text-xs font-semibold text-brand-orangeText">
             有 <span id="unclassifiedCount">0</span> 筆資料還沒分類，點一下就能歸好
           </h4>
-          <p class="text-[11px] text-brand-orangeText/80 mt-0.5">（點開卡片即可隨時修改所有內容）</p>
+          <p class="text-[11px] text-brand-orangeText/80 mt-0.5">（點開卡片即可隨時修改內容或補傳相片）</p>
         </div>
       </div>
       <span class="text-xs text-brand-orangeText font-medium whitespace-nowrap mt-0.5 flex items-center gap-1">
@@ -202,7 +202,7 @@
       </div>
     </div>
 
-    <!-- 待辦任務清單 -->
+    <!-- 待辦任務清單（僅顯示有設定提醒日期的任務） -->
     <div>
       <div class="text-slate-800 font-bold text-sm mb-2">指派給我的任務</div>
       <div id="todoContainer" class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs space-y-2 text-xs text-slate-400">
@@ -347,7 +347,7 @@
           </select>
         </div>
         <div>
-          <label class="block text-[11px] font-bold text-slate-500 mb-1">提醒日期</label>
+          <label class="block text-[11px] font-bold text-slate-500 mb-1">提醒日期（有填才列首頁任務）</label>
           <input type="date" id="prevReminderDate" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:border-brand">
         </div>
       </div>
@@ -378,7 +378,7 @@
     </div>
   </div>
 
-  <!-- 彈窗 3：記憶詳細資訊（含刪除、整合 Google 日曆與 Google 工作） -->
+  <!-- 彈窗 3：記憶詳細資訊（含補傳相片、刪除、整合 Google 日曆與 Google 工作） -->
   <div id="detailModal" class="modal-layer fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
     <div class="bg-white w-full max-w-md rounded-2xl p-5 space-y-3.5 shadow-2xl max-h-[90vh] overflow-y-auto">
       <div class="flex items-center justify-between border-b pb-2">
@@ -391,6 +391,23 @@
         <div id="ytPlayIcon" class="hidden absolute inset-0 bg-black/30 flex items-center justify-center text-white text-4xl">
           <i class="fa-brands fa-youtube text-red-600 bg-white rounded-2xl px-2 py-1 shadow-lg"></i>
         </div>
+      </div>
+
+      <!-- 事後補傳 / 更換相片按鈕區 -->
+      <div class="flex items-center justify-between bg-slate-50 border border-slate-200/80 rounded-xl p-2">
+        <div class="flex items-center gap-2">
+          <label class="cursor-pointer text-xs bg-white border border-slate-200 hover:border-brand text-slate-700 px-2.5 py-1.5 rounded-lg font-medium flex items-center gap-1.5 transition shadow-2xs">
+            <i class="fa-solid fa-camera text-brand"></i>
+            <span>拍照補傳</span>
+            <input type="file" id="editDetailCameraInput" accept="image/*" capture="camera" class="hidden" onchange="handleDetailFileChange(event)">
+          </label>
+          <label class="cursor-pointer text-xs bg-white border border-slate-200 hover:border-brand text-slate-700 px-2.5 py-1.5 rounded-lg font-medium flex items-center gap-1.5 transition shadow-2xs">
+            <i class="fa-regular fa-image text-brand"></i>
+            <span>相簿選圖</span>
+            <input type="file" id="editDetailFileInput" accept="image/*" class="hidden" onchange="handleDetailFileChange(event)">
+          </label>
+        </div>
+        <span id="editDetailFileName" class="text-[11px] text-emerald-600 font-medium truncate max-w-[120px]"></span>
       </div>
 
       <div>
@@ -487,13 +504,13 @@
         <button onclick="toggleConfigModal()" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
       </div>
 
-     <!-- 資料匯出備份區 -->
-    <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
-      <span class="text-[11px] font-bold text-slate-600 block">📥 資料匯出備份</span>
-      <button onclick="exportDataAsPDF()" class="w-full bg-white border border-slate-300 hover:border-red-500 text-slate-700 py-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition active:scale-95 shadow-xs">
-        <i class="fa-solid fa-file-pdf text-red-500 text-base"></i> 匯出全部記憶為 PDF (含相片)
-      </button>
-    </div>
+      <!-- 資料匯出備份區 -->
+      <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
+        <span class="text-[11px] font-bold text-slate-600 block">📥 資料匯出備份</span>
+        <button onclick="exportDataAsPDF()" class="w-full bg-white border border-slate-300 hover:border-red-500 text-slate-700 py-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition active:scale-95 shadow-xs">
+          <i class="fa-solid fa-file-pdf text-red-500 text-base"></i> 匯出全部記憶為 PDF (含相片)
+        </button>
+      </div>
 
       <div>
         <label class="block text-[11px] font-semibold text-slate-600 mb-1">你的暱稱</label>
@@ -521,9 +538,12 @@
     let currentActiveMediaUrl = "";
     let modalFileBase64 = null;
     let modalFileName = "";
+    let detailFileBase64 = null; // 事後補傳相片用
+    let detailFileName = "";
     let isVoiceActive = false;
     let recognition = null;
     let currentDisplayList = [];
+    let isSavingLock = false;
 
     const CATEGORIES = ["財務", "工作", "旅行", "醫療健康", "證件", "家庭生活", "購物", "學習", "未分類"];
 
@@ -677,6 +697,30 @@
       document.getElementById('modalFilePreview').classList.add('hidden');
     }
 
+    // 處理詳細頁面的補傳相片
+    function handleDetailFileChange(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      detailFileName = file.name;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        detailFileBase64 = event.target.result;
+        document.getElementById('editDetailFileName').innerText = `待上傳：${file.name}`;
+        document.getElementById('detailImage').src = detailFileBase64;
+        document.getElementById('detailImageContainer').classList.remove('hidden');
+        document.getElementById('ytPlayIcon').classList.add('hidden');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearDetailFile() {
+      detailFileBase64 = null;
+      detailFileName = "";
+      if (document.getElementById('editDetailFileInput')) document.getElementById('editDetailFileInput').value = "";
+      if (document.getElementById('editDetailCameraInput')) document.getElementById('editDetailCameraInput').value = "";
+      if (document.getElementById('editDetailFileName')) document.getElementById('editDetailFileName').innerText = "";
+    }
+
     function toggleVoiceInputModal() {
       if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
         alert('此瀏覽器未支援語音辨識');
@@ -751,7 +795,12 @@
         document.getElementById('prevCategory').value = ai.category || '未分類';
         document.getElementById('prevReminderDate').value = ai.reminder_date || '';
         document.getElementById('prevSummary').value = ai.summary || '';
-        document.getElementById('prevTodos').value = Array.isArray(ai.action_items) ? ai.action_items.join('\n') : (ai.action_items || '');
+
+        // 去除重複並過濾空行
+        let rawTodos = Array.isArray(ai.action_items) ? ai.action_items : (ai.action_items ? String(ai.action_items).split('\n') : []);
+        let uniqueTodos = [...new Set(rawTodos.map(t => String(t).trim()).filter(Boolean))];
+        document.getElementById('prevTodos').value = uniqueTodos.join('\n');
+
         document.getElementById('prevTags').value = Array.isArray(ai.tags) ? ai.tags.join(', ') : (ai.tags || '');
 
         document.getElementById('addModal').classList.add('hidden');
@@ -771,9 +820,11 @@
     }
 
     async function confirmSaveToCloud() {
+      if (isSavingLock) return;
       const gasUrl = localStorage.getItem('MEMOBOX_GAS_URL');
       if (!gasUrl) return;
 
+      isSavingLock = true;
       const rawContent = document.getElementById('modalInput').value.trim();
       const title = document.getElementById('prevTitle').value.trim();
       const category = document.getElementById('prevCategory').value;
@@ -781,6 +832,8 @@
       const summary = document.getElementById('prevSummary').value.trim();
       const todos = document.getElementById('prevTodos').value.trim();
       const tags = document.getElementById('prevTags').value.trim();
+
+      const uniqueTodoLines = todos ? [...new Set(todos.split('\n').map(l => l.trim()).filter(Boolean))] : [];
 
       const btn = document.getElementById('btnConfirmSave');
       btn.disabled = true;
@@ -793,7 +846,7 @@
           category: category,
           reminder_date: reminderDate,
           summary: summary,
-          action_items: todos ? todos.split('\n') : [],
+          action_items: uniqueTodoLines,
           tags: tags ? tags.split(',').map(t => t.trim()) : [],
           fileBase64: modalFileBase64,
           fileName: modalFileName
@@ -811,11 +864,12 @@
         document.getElementById('previewModal').classList.add('hidden');
         document.getElementById('modalInput').value = "";
         clearModalFile();
-        fetchNotesFromDrive();
+        await fetchNotesFromDrive();
 
       } catch (err) {
         alert("存入失敗：" + err.message);
       } finally {
+        isSavingLock = false;
         btn.disabled = false;
         btn.innerText = '確認存入雲端';
       }
@@ -844,6 +898,7 @@
       let unclassified = 0;
       let todos = [];
       let reminders = [];
+      const seenTodoKeys = new Set();
       const todayStr = new Date().toISOString().split('T')[0];
 
       allNotes.forEach((item, idx) => {
@@ -853,20 +908,26 @@
 
         if (cat === '未分類') unclassified++;
 
-        if (item['待辦清單'] && item['待辦清單'].toString().trim()) {
-          const lines = item['待辦清單'].toString().split('\n');
+        const rDateStr = item['提醒日期'] ? item['提醒日期'].toString().trim().substring(0, 10) : '';
+
+        // 核心修正：必須同時有「待辦清單」且有「提醒日期」，才列入首頁任務且去除重複
+        if (item['待辦清單'] && item['待辦清單'].toString().trim() && rDateStr) {
+          const lines = [...new Set(item['待辦清單'].toString().split('\n').map(l => l.trim()).filter(Boolean))];
           lines.forEach(l => {
-            if (l.trim()) todos.push({ noteId: item['ID'], title: item['標題'], todo: l.trim(), date: item['提醒日期'] });
+            const dedupKey = `${item['ID']}_${l}`;
+            if (!seenTodoKeys.has(dedupKey)) {
+              seenTodoKeys.add(dedupKey);
+              todos.push({ noteId: item['ID'], title: item['標題'], todo: l, date: rDateStr });
+            }
           });
         }
 
-        if (item['提醒日期'] && item['提醒日期'].toString().trim()) {
-          const rDate = item['提醒日期'].toString().trim().substring(0, 10);
-          const isExpired = rDate < todayStr;
+        if (rDateStr) {
+          const isExpired = rDateStr < todayStr;
           reminders.push({
             noteId: item['ID'],
             title: item['標題'],
-            date: rDate,
+            date: rDateStr,
             isExpired: isExpired
           });
         }
@@ -956,7 +1017,7 @@
         }
 
         let todoHtml = '';
-        if (item['待辦清單']) {
+        if (item['待辦清單'] && String(item['待辦清單']).trim()) {
           todoHtml = `
             <div class="bg-amber-50/70 border border-amber-200/60 rounded-xl p-2 text-[11px] text-amber-800 pointer-events-none">
               📌 <strong>待辦：</strong>\n${item['待辦清單']}
@@ -974,7 +1035,7 @@
           <p class="text-xs text-slate-600 line-clamp-2 pointer-events-none">${item['摘要'] || item['原始內容'] || ''}</p>
           ${todoHtml}
           <div class="flex items-center justify-between pt-1 text-[11px] text-slate-400 pointer-events-none">
-            <span>${item['提醒日期'] ? `⏰ ${item['提醒日期']}` : ''}</span>
+            <span>${item['提醒日期'] ? `⏰ ${String(item['提醒日期']).substring(0, 10)}` : ''}</span>
             <span class="text-brand flex items-center gap-1 text-[11px]">查看 / 編輯 <i class="fa-solid fa-chevron-right text-[9px]"></i></span>
           </div>
         `;
@@ -994,6 +1055,7 @@
         return;
       }
       currentDetailNote = item;
+      clearDetailFile();
 
       try {
         const setVal = (id, val) => {
@@ -1065,6 +1127,7 @@
       document.getElementById('detailModal').classList.add('hidden');
       currentDetailNote = null;
       currentActiveMediaUrl = "";
+      clearDetailFile();
     }
 
     async function deleteCurrentNote() {
@@ -1146,7 +1209,7 @@
       }
     }
 
-    // 核心新增：直接將待辦事項寫入 Google 工作 (Tasks)
+    // 直接將待辦事項寫入 Google 工作 (Tasks)
     async function syncCurrentToTasks() {
       if (!currentDetailNote) return;
       const title = document.getElementById('editDetailTitle').value.trim() || currentDetailNote['標題'];
@@ -1191,125 +1254,124 @@
       }
     }
 
-// 專門解析並轉換 Google Drive 連結為可直接讀取的圖片網址
-function formatGoogleDriveUrl(url) {
-  if (!url || typeof url !== 'string') return '';
-  const driveRegex = /(?:\/file\/d\/|id=)([a-zA-Z0-9_-]{25,})/;
-  const match = url.match(driveRegex);
-  if (match && match[1]) {
-    return `https://lh3.googleusercontent.com/d/${match[1]}`;
-  }
-  return url;
-}
-
-// 輔助函式：將遠端圖片 URL 轉為 Base64 字串
-async function getBase64ImageFromUrl(imageUrl) {
-  if (!imageUrl) return '';
-  if (imageUrl.startsWith('data:image')) return imageUrl;
-  
-  const convertedUrl = formatGoogleDriveUrl(imageUrl);
-
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      try {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.naturalWidth || img.width;
-        canvas.height = img.naturalHeight || img.height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0);
-        resolve(canvas.toDataURL('image/jpeg', 0.85));
-      } catch (err) {
-        resolve(convertedUrl);
+    function formatGoogleDriveUrl(url) {
+      if (!url || typeof url !== 'string') return '';
+      const driveRegex = /(?:\/file\/d\/|id=)([a-zA-Z0-9_-]{25,})/;
+      const match = url.match(driveRegex);
+      if (match && match[1]) {
+        return `https://lh3.googleusercontent.com/d/${match[1]}`;
       }
-    };
-    img.onerror = () => {
-      resolve(convertedUrl);
-    };
-    img.src = convertedUrl;
-  });
-}
-
-async function exportDataAsPDF() {
-  if (!allNotes || allNotes.length === 0) {
-    alert('目前無任何記憶資料可匯出！');
-    return;
-  }
-
-  const btn = event?.currentTarget;
-  const originalText = btn ? btn.innerHTML : '';
-  if (btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 正在載入相片並匯出 PDF...';
-
-  try {
-    const printArea = document.createElement('div');
-    printArea.style.padding = '20px';
-    printArea.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-    printArea.style.color = '#1e293b';
-    printArea.style.background = '#ffffff';
-
-    const todayStr = new Date().toISOString().substring(0, 10);
-
-    let html = `
-      <div style="border-bottom: 2px solid #388E6C; padding-bottom: 10px; margin-bottom: 16px;">
-        <h1 style="font-size: 20px; font-weight: bold; color: #388E6C; margin: 0;">AI 記憶夾 - 完整資料備份</h1>
-        <p style="font-size: 11px; color: #64748b; margin: 4px 0 0 0;">匯出日期：${todayStr} ｜ 總筆數：${allNotes.length} 筆</p>
-      </div>
-      <div style="display: flex; flex-direction: column; gap: 14px;">
-    `;
-
-    for (let idx = 0; idx < allNotes.length; idx++) {
-      const n = allNotes[idx];
-      const rawPhotoUrl = n['附件連結'] ||n['圖片'] || n['相片'] || n['照片'] || n['image'] || n['imageUrl'] || n['圖片網址'] || n['Photo'] || '';
-      
-      let imgHtml = '';
-      if (rawPhotoUrl) {
-        const base64Data = await getBase64ImageFromUrl(rawPhotoUrl);
-        const finalSrc = base64Data || formatGoogleDriveUrl(rawPhotoUrl);
-        imgHtml = `
-          <div style="margin-top: 8px;">
-            <img src="${finalSrc}" crossorigin="anonymous" style="max-width: 260px; max-height: 220px; border-radius: 6px; border: 1px solid #cbd5e1; object-fit: contain; display: block;" />
-          </div>
-        `;
-      }
-
-      html += `
-        <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; background: #ffffff; page-break-inside: avoid;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-            <strong style="font-size: 13px; color: #0f172a;">${idx + 1}. ${n['標題'] || '無標題'}</strong>
-            <span style="font-size: 10px; background: #E8F5E9; color: #2B6F54; padding: 2px 6px; border-radius: 4px; font-weight: bold;">
-              ${n['分類'] || '未分類'}
-            </span>
-          </div>
-          <p style="font-size: 11px; color: #475569; margin: 4px 0; line-height: 1.5;">
-            ${n['摘要'] || n['原始內容'] || '無內容'}
-          </p>
-          ${imgHtml}
-          ${n['待辦清單'] ? `<div style="font-size: 10px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; margin-top: 6px;">📌 <strong>待辦：</strong> ${String(n['待辦清單']).replace(/\n/g, '、')}</div>` : ''}
-          ${n['提醒日期'] ? `<div style="font-size: 10px; color: #ea580c; margin-top: 4px;">⏰ 提醒日期：${n['提醒日期']}</div>` : ''}
-        </div>
-      `;
+      return url;
     }
 
-    html += `</div>`;
-    printArea.innerHTML = html;
+    async function getBase64ImageFromUrl(imageUrl) {
+      if (!imageUrl) return '';
+      if (imageUrl.startsWith('data:image')) return imageUrl;
+      
+      const convertedUrl = formatGoogleDriveUrl(imageUrl);
 
-    const opt = {
-      margin: [10, 10, 10, 10],
-      filename: `AI記憶夾備份_${todayStr}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, allowTaint: true },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          try {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth || img.width;
+            canvas.height = img.naturalHeight || img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            resolve(canvas.toDataURL('image/jpeg', 0.85));
+          } catch (err) {
+            resolve(convertedUrl);
+          }
+        };
+        img.onerror = () => {
+          resolve(convertedUrl);
+        };
+        img.src = convertedUrl;
+      });
+    }
 
-    await html2pdf().set(opt).from(printArea).save();
-    alert('PDF 備份已成功下載！');
-  } catch (err) {
-    alert('PDF 匯出失敗：' + err.message);
-  } finally {
-    if (btn) btn.innerHTML = originalText;
-  }
-}
+    async function exportDataAsPDF() {
+      if (!allNotes || allNotes.length === 0) {
+        alert('目前無任何記憶資料可匯出！');
+        return;
+      }
+
+      const btn = event?.currentTarget;
+      const originalText = btn ? btn.innerHTML : '';
+      if (btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 正在載入相片並匯出 PDF...';
+
+      try {
+        const printArea = document.createElement('div');
+        printArea.style.padding = '20px';
+        printArea.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        printArea.style.color = '#1e293b';
+        printArea.style.background = '#ffffff';
+
+        const todayStr = new Date().toISOString().substring(0, 10);
+
+        let html = `
+          <div style="border-bottom: 2px solid #388E6C; padding-bottom: 10px; margin-bottom: 16px;">
+            <h1 style="font-size: 20px; font-weight: bold; color: #388E6C; margin: 0;">AI 記憶夾 - 完整資料備份</h1>
+            <p style="font-size: 11px; color: #64748b; margin: 4px 0 0 0;">匯出日期：${todayStr} ｜ 總筆數：${allNotes.length} 筆</p>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+        `;
+
+        for (let idx = 0; idx < allNotes.length; idx++) {
+          const n = allNotes[idx];
+          const rawPhotoUrl = n['附件連結'] || n['圖片'] || n['相片'] || n['照片'] || n['image'] || n['imageUrl'] || n['圖片網址'] || n['Photo'] || '';
+          
+          let imgHtml = '';
+          if (rawPhotoUrl) {
+            const base64Data = await getBase64ImageFromUrl(rawPhotoUrl);
+            const finalSrc = base64Data || formatGoogleDriveUrl(rawPhotoUrl);
+            imgHtml = `
+              <div style="margin-top: 8px;">
+                <img src="${finalSrc}" crossorigin="anonymous" style="max-width: 260px; max-height: 220px; border-radius: 6px; border: 1px solid #cbd5e1; object-fit: contain; display: block;" />
+              </div>
+            `;
+          }
+
+          html += `
+            <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; background: #ffffff; page-break-inside: avoid;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <strong style="font-size: 13px; color: #0f172a;">${idx + 1}. ${n['標題'] || '無標題'}</strong>
+                <span style="font-size: 10px; background: #E8F5E9; color: #2B6F54; padding: 2px 6px; border-radius: 4px; font-weight: bold;">
+                  ${n['分類'] || '未分類'}
+                </span>
+              </div>
+              <p style="font-size: 11px; color: #475569; margin: 4px 0; line-height: 1.5;">
+                ${n['摘要'] || n['原始內容'] || '無內容'}
+              </p>
+              ${imgHtml}
+              ${n['待辦清單'] ? `<div style="font-size: 10px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; margin-top: 6px;">📌 <strong>待辦：</strong> ${String(n['待辦清單']).replace(/\n/g, '、')}</div>` : ''}
+              ${n['提醒日期'] ? `<div style="font-size: 10px; color: #ea580c; margin-top: 4px;">⏰ 提醒日期：${n['提醒日期']}</div>` : ''}
+            </div>
+          `;
+        }
+
+        html += `</div>`;
+        printArea.innerHTML = html;
+
+        const opt = {
+          margin: [10, 10, 10, 10],
+          filename: `AI記憶夾備份_${todayStr}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, allowTaint: true },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        await html2pdf().set(opt).from(printArea).save();
+        alert('PDF 備份已成功下載！');
+      } catch (err) {
+        alert('PDF 匯出失敗：' + err.message);
+      } finally {
+        if (btn) btn.innerHTML = originalText;
+      }
+    }
+
     async function saveFullNoteEdit() {
       if (!currentDetailNote || !currentDetailNote['ID']) return;
       const gasUrl = localStorage.getItem('MEMOBOX_GAS_URL');
@@ -1325,7 +1387,7 @@ async function exportDataAsPDF() {
 
       const btn = document.getElementById('btnSaveFullEdit');
       btn.disabled = true;
-      btn.innerText = '儲存中...';
+      btn.innerText = detailFileBase64 ? '上傳相片並儲存中...' : '儲存中...';
 
       try {
         const payload = {
@@ -1337,7 +1399,9 @@ async function exportDataAsPDF() {
           summary: summary,
           action_items: todos,
           tags: tags,
-          content: rawContent
+          content: rawContent,
+          fileBase64: detailFileBase64,
+          fileName: detailFileName
         };
 
         const res = await fetch(gasUrl, {
@@ -1348,18 +1412,9 @@ async function exportDataAsPDF() {
         const json = await res.json();
 
         if (json.status === "success") {
-          currentDetailNote['標題'] = title;
-          currentDetailNote['分類'] = category;
-          currentDetailNote['提醒日期'] = reminderDate;
-          currentDetailNote['摘要'] = summary;
-          currentDetailNote['待辦清單'] = todos;
-          currentDetailNote['標籤'] = tags;
-          currentDetailNote['原始內容'] = rawContent;
-
-          updateDashboard();
-          renderNotesList(allNotes);
           alert('修改儲存成功！');
           closeDetailModal();
+          await fetchNotesFromDrive();
         } else {
           alert('儲存失敗，找不到該筆資料');
         }

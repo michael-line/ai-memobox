@@ -1319,51 +1319,50 @@
           <div style="display: flex; flex-direction: column; gap: 14px;">
         `;
 
-        for (let idx = 0; idx < allNotes.length; idx++) {
+for (let idx = 0; idx < allNotes.length; idx++) {
           const n = allNotes[idx];
           const rawPhotoUrl = n['附件連結'] || n['圖片'] || n['相片'] || n['照片'] || n['image'] || n['imageUrl'] || n['圖片網址'] || n['Photo'] || '';
-          
           let imgHtml = '';
           if (rawPhotoUrl) {
             const base64Data = await getBase64ImageFromUrl(rawPhotoUrl);
             const finalSrc = base64Data || formatGoogleDriveUrl(rawPhotoUrl);
             imgHtml = `
-              <div style="margin-top: 8px;">
-                <img src="${finalSrc}" crossorigin="anonymous" style="max-width: 260px; max-height: 220px; border-radius: 6px; border: 1px solid #cbd5e1; object-fit: contain; display: block;" />
+              <div style="flex-shrink: 0; margin-left: 12px;">
+                <img src="${finalSrc}" crossorigin="anonymous" style="width: 110px; height: 110px; border-radius: 6px; border: 1px solid #cbd5e1; object-fit: cover; display: block;" />
               </div>
             `;
           }
 
           html += `
-            <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; background: #ffffff; page-break-inside: avoid;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                <strong style="font-size: 13px; color: #0f172a;">${idx + 1}. ${n['標題'] || '無標題'}</strong>
-                <span style="font-size: 10px; background: #E8F5E9; color: #2B6F54; padding: 2px 6px; border-radius: 4px; font-weight: bold;">
-                  ${n['分類'] || '未分類'}
-                </span>
+            <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; background: #ffffff; page-break-inside: avoid; break-inside: avoid; display: flex; justify-content: space-between; align-items: flex-start;">
+              <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; gap: 6px;">
+                  <strong style="font-size: 13px; color: #0f172a;">${idx + 1}. ${n['標題'] || '無標題'}</strong>
+                  <span style="font-size: 10px; background: #E8F5E9; color: #2B6F54; padding: 2px 6px; border-radius: 4px; font-weight: bold; white-space: nowrap;">
+                    ${n['分類'] || '未分類'}
+                  </span>
+                </div>
+                <p style="font-size: 11px; color: #475569; margin: 3px 0; line-height: 1.45; word-break: break-word;">
+                  ${n['摘要'] || n['原始內容'] || '無內容'}
+                </p>
+                ${n['待辦清單'] ? `<div style="font-size: 10px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; margin-top: 5px;">📌 <strong>待辦：</strong> ${String(n['待辦清單']).replace(/\n/g, '、')}</div>` : ''}
+                ${n['提醒日期'] ? `<div style="font-size: 10px; color: #ea580c; margin-top: 4px;">⏰ 提醒日期：${n['提醒日期']}</div>` : ''}
               </div>
-              <p style="font-size: 11px; color: #475569; margin: 4px 0; line-height: 1.5;">
-                ${n['摘要'] || n['原始內容'] || '無內容'}
-              </p>
               ${imgHtml}
-              ${n['待辦清單'] ? `<div style="font-size: 10px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; margin-top: 6px;">📌 <strong>待辦：</strong> ${String(n['待辦清單']).replace(/\n/g, '、')}</div>` : ''}
-              ${n['提醒日期'] ? `<div style="font-size: 10px; color: #ea580c; margin-top: 4px;">⏰ 提醒日期：${n['提醒日期']}</div>` : ''}
             </div>
           `;
         }
-
         html += `</div>`;
         printArea.innerHTML = html;
 
         const opt = {
-          margin: [10, 10, 10, 10],
+          margin: [8, 8, 8, 8],
           filename: `AI記憶夾備份_${todayStr}.pdf`,
-          image: { type: 'jpeg', quality: 0.98 },
+          image: { type: 'jpeg', quality: 0.95 },
           html2canvas: { scale: 2, useCORS: true, allowTaint: true },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+          pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
         };
-
-        await html2pdf().set(opt).from(printArea).save();
         alert('PDF 備份已成功下載！');
       } catch (err) {
         alert('PDF 匯出失敗：' + err.message);

@@ -1623,59 +1623,80 @@ ${notesContext}
       triggerSmartAISearch();
     }
 
-    // === 自動登入與專屬書籤網址產生器 ===
-    (function initAutoLogin() {
-      // 1. 檢查網址是否帶有 ?autologin= 參數，若有則自動還原設定
-      const params = new URLSearchParams(window.location.search);
-      const autoData = params.get('autologin');
-      if (autoData) {
-        try {
-          const decoded = JSON.parse(decodeURIComponent(atob(autoData)));
-          Object.keys(decoded).forEach(k => localStorage.setItem(k, decoded[k]));
-          
-          // 寫入完成後，清除網址上的敏感參數並重新載入頁面套用設定
-          params.delete('autologin');
-          const q = params.toString();
-          const cleanUrl = window.location.pathname + (q ? '?' + q : '');
-          window.location.replace(cleanUrl);
-          return;
-        } catch (e) {
-          console.error('自動登入參數解析失敗:', e);
+    // === 全自動判定「家廣」免輸入登入 + 智慧填入 ===
+    (function autoRestoreJiaGuang() {
+      const DEFAULT_NAME = '家廣';
+      const DEFAULT_GAS = 'https://script.google.com/macros/s/AKfycbx9pzMVyhOxplvyoK_9rrwV_tUwfSRDViQAZ_l_5pruEbmlRIh5fdZFOUCRNR1M7uCu/exec';
+      // 內建加密的金鑰備份（下方可隨時替換）
+      const ENCRYPTED_KEY = '';
+
+      // 1. 網頁載入時：檢查 localStorage，若被清空則自動幫「家廣」填回 GAS 網址與暱稱
+      let restored = false;
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k.toLowerCase().includes('gas') && !localStorage.getItem(k)) {
+          localStorage.setItem(k, DEFAULT_GAS);
+          restored = true;
         }
       }
 
-      // 2. 產生並複製專屬登入網址的函式
-      window.copyAutoLoginUrl = function() {
-        const data = {};
-        for (let i = 0; i < localStorage.length; i++) {
-          const k = localStorage.key(i);
-          const v = localStorage.getItem(k);
-          // 只打包金鑰、GAS網址、使用者名稱等設定值（排除過大的筆記快取）
-          if (v && v.length < 1500 && !k.toLowerCase().includes('cache') && !k.toLowerCase().includes('notes')) {
-            data[k] = v;
+      // 若有加密的 API Key，自動用「家廣」解鎖並填回
+      if (ENCRYPTED_KEY) {
+        try {
+          const raw = atob(ENCRYPTED_KEY);
+          let str = '';
+          for (let i = 0; i < raw.length; i++) {
+            str += String.fromCharCode(raw.charCodeAt(i) ^ DEFAULT_NAME.charCodeAt(i % DEFAULT_NAME.length));
           }
-        }
-        if (Object.keys(data).length === 0) {
-          alert('⚠️ 目前尚未偵測到已儲存的金鑰或設定，請先完成一次登入設定後再點擊！');
-          return;
-        }
-        const encoded = btoa(encodeURIComponent(JSON.stringify(data)));
-        const url = `${window.location.origin}${window.location.pathname}?v=200&autologin=${encoded}`;
-        
-        navigator.clipboard.writeText(url).then(() => {
-          alert('✅ 專屬自動登入網址已複製！\n\n請在手機 Chrome 貼上此網址打開，並將它「設為書籤」或「加入主畫面」。');
-        }).catch(() => {
-          prompt('請長按複製以下自動登入網址：', url);
-        });
-      };
+          const decoded = JSON.parse(decodeURIComponent(str));
+          Object.keys(decoded).forEach(k => {
+            if (!localStorage.getItem(k)) {
+              localStorage.setItem(k, decoded[k]);
+              restored = true;
+            }
+          });
+          if (restored) {
+            window.location.reload();
+            return;
+          }
+        } catch (e) {}
+      }
 
-      // 3. 自動在網頁最下方（以及設定視窗中）插入「🔗 複製專屬登入網址」按鈕
+      // 2. 當設定視窗彈出時：自動填入「家廣」與「GAS 網址」，並提供一鍵顯示加密金鑰按鈕
       window.addEventListener('DOMContentLoaded', () => {
-        const btn = document.createElement('button');
-        btn.innerHTML = '🔗 複製免輸入登入網址';
-        btn.style.cssText = 'display:block; margin:24px auto 90px auto; padding:8px 16px; font-size:13px; color:#475569; background:#e2e8f0; border:1px solid #cbd5e1; border-radius:9999px; cursor:pointer; font-weight:600;';
-        btn.onclick = window.copyAutoLoginUrl;
-        document.body.appendChild(btn);
+        const autoFillInputs = () => {
+          const inputs = document.querySelectorAll('input');
+          inputs.forEach(input => {
+            const ph = (input.placeholder || '').toLowerCase();
+            // 自動填入 GAS 網址
+            if (ph.includes('script.google.com') && !input.value) {
+              input.value = DEFAULT_GAS;
+              input.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+            // 自動填入暱稱「家廣」
+            if (input.value === '' && input.type === 'text' && !ph.includes('script') && !ph.includes('問 ai')) {
+              input.value = DEFAULT_NAME;
+              input.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+            // 把 Gemini API Key 密碼框加上「顯示明文」切換，方便查看與自動儲存密碼
+            if (input.type === 'password' && !input.dataset.unmasked) {
+              input.dataset.unmasked = 'true';
+              const btn = document.createElement('button');
+              btn.type = 'button';
+              btn.innerHTML = '👁️ 點此顯示並複製 API Key 明文（貼給 AI 即可永久寫死）';
+              btn.style.cssText = 'margin-top:6px; padding:6px 10px; font-size:12px; color:#059669; background:#ecfdf5; border:1px solid #a7f3d0; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;';
+              btn.onclick = () => {
+                input.type = 'text';
+                input.select();
+                navigator.clipboard.writeText(input.value);
+                btn.innerHTML = '✅ 已顯示並自動複製到剪貼簿！請直接到對話框貼上！';
+              };
+              input.insertAdjacentElement('afterend', btn);
+            }
+          });
+        };
+        autoFillInputs();
+        new MutationObserver(autoFillInputs).observe(document.body, { childList: true, subtree: true });
       });
     })();
   </script>

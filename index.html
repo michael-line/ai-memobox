@@ -1622,6 +1622,62 @@ ${notesContext}
     function searchNotes() {
       triggerSmartAISearch();
     }
+
+    // === 自動登入與專屬書籤網址產生器 ===
+    (function initAutoLogin() {
+      // 1. 檢查網址是否帶有 ?autologin= 參數，若有則自動還原設定
+      const params = new URLSearchParams(window.location.search);
+      const autoData = params.get('autologin');
+      if (autoData) {
+        try {
+          const decoded = JSON.parse(decodeURIComponent(atob(autoData)));
+          Object.keys(decoded).forEach(k => localStorage.setItem(k, decoded[k]));
+          
+          // 寫入完成後，清除網址上的敏感參數並重新載入頁面套用設定
+          params.delete('autologin');
+          const q = params.toString();
+          const cleanUrl = window.location.pathname + (q ? '?' + q : '');
+          window.location.replace(cleanUrl);
+          return;
+        } catch (e) {
+          console.error('自動登入參數解析失敗:', e);
+        }
+      }
+
+      // 2. 產生並複製專屬登入網址的函式
+      window.copyAutoLoginUrl = function() {
+        const data = {};
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          const v = localStorage.getItem(k);
+          // 只打包金鑰、GAS網址、使用者名稱等設定值（排除過大的筆記快取）
+          if (v && v.length < 1500 && !k.toLowerCase().includes('cache') && !k.toLowerCase().includes('notes')) {
+            data[k] = v;
+          }
+        }
+        if (Object.keys(data).length === 0) {
+          alert('⚠️ 目前尚未偵測到已儲存的金鑰或設定，請先完成一次登入設定後再點擊！');
+          return;
+        }
+        const encoded = btoa(encodeURIComponent(JSON.stringify(data)));
+        const url = `${window.location.origin}${window.location.pathname}?v=200&autologin=${encoded}`;
+        
+        navigator.clipboard.writeText(url).then(() => {
+          alert('✅ 專屬自動登入網址已複製！\n\n請在手機 Chrome 貼上此網址打開，並將它「設為書籤」或「加入主畫面」。');
+        }).catch(() => {
+          prompt('請長按複製以下自動登入網址：', url);
+        });
+      };
+
+      // 3. 自動在網頁最下方（以及設定視窗中）插入「🔗 複製專屬登入網址」按鈕
+      window.addEventListener('DOMContentLoaded', () => {
+        const btn = document.createElement('button');
+        btn.innerHTML = '🔗 複製免輸入登入網址';
+        btn.style.cssText = 'display:block; margin:24px auto 90px auto; padding:8px 16px; font-size:13px; color:#475569; background:#e2e8f0; border:1px solid #cbd5e1; border-radius:9999px; cursor:pointer; font-weight:600;';
+        btn.onclick = window.copyAutoLoginUrl;
+        document.body.appendChild(btn);
+      });
+    })();
   </script>
 </body>
 </html>

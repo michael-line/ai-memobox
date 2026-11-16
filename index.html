@@ -86,12 +86,6 @@
       </button>
     </div>
 
-    <button onclick="openAddModal()" class="w-full bg-brand hover:bg-brand-dark active:scale-[0.99] text-white py-3.5 rounded-2xl font-semibold text-base shadow-sm flex items-center justify-center gap-2 transition">
-      <i class="fa-solid fa-plus text-sm"></i>
-      <span>添加記憶</span>
-    </button>
-
-    <!-- 未分類橫幅 -->
     <div id="unclassifiedBanner" class="bg-brand-accent border border-brand-borderOrange rounded-2xl p-3.5 flex items-start justify-between gap-2 shadow-xs cursor-pointer" onclick="filterByCategory('未分類')">
       <div class="flex items-start gap-2.5">
         <div class="text-brand-orangeText text-lg mt-0.5">
@@ -334,10 +328,19 @@
           </label>
         </div>
 
-        <button id="modalAnalyzeBtn" onclick="requestAIPreview()" class="bg-brand hover:bg-brand-dark text-white px-5 py-2.5 rounded-xl font-medium text-xs shadow-sm flex items-center gap-1.5 transition">
-          <i class="fa-solid fa-wand-magic-sparkles text-xs"></i>
-          <span>AI 分析記憶</span>
-        </button>
+        <div class="flex items-center gap-2">
+  <!-- ⚡ 新增的不用 AI 分析、直接存檔按鈕 -->
+  <button type="button" onclick="saveMemoDirectly()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2.5 rounded-xl font-medium text-xs shadow-2xs flex items-center gap-1.5 transition">
+    <i class="fa-solid fa-floppy-disk text-xs"></i>
+    <span>直接存檔</span>
+  </button>
+
+  <!-- 原有的 AI 分析記憶按鈕 -->
+  <button id="modalAnalyzeBtn" onclick="requestAIPreview()" class="bg-brand hover:bg-brand-dark text-white px-5 py-2.5 rounded-xl font-medium text-xs shadow-sm flex items-center gap-1.5 transition">
+    <i class="fa-solid fa-wand-magic-sparkles text-xs"></i>
+    <span>AI 分析記憶</span>
+  </button>
+</div>
       </div>
     </div>
   </div>
@@ -1699,6 +1702,48 @@ ${notesContext}
         new MutationObserver(autoFillAndSave).observe(document.body, { childList: true, subtree: true });
       });
     })();
+    // ⚡ 直接存檔（不經過 AI 分析）
+    async function saveMemoDirectly() {
+      const title = document.getElementById('preTitleInput')?.value.trim() || '';
+      const category = document.getElementById('preCategorySelect')?.value || '未分類';
+      const content = document.getElementById('modalInput')?.value.trim() || '';
+      
+      if (!content) {
+        alert('請先輸入記憶內容再進行存檔！');
+        document.getElementById('modalInput')?.focus();
+        return;
+      }
+
+      const newMemo = {
+        id: Date.now(),
+        title: title || (content.length > 15 ? content.slice(0, 15) + '...' : content),
+        category: category,
+        content: content,
+        aiSummary: '（手動直接存檔，未透過 AI 智慧分析）',
+        tags: ['手動存檔'],
+        photos: window.currentModalPhotos || [],
+        date: new Date().toISOString()
+      };
+
+      if (!Array.isArray(appData.memos)) appData.memos = [];
+      appData.memos.unshift(newMemo);
+
+      // 清空輸入框
+      document.getElementById('preTitleInput').value = '';
+      document.getElementById('preCategorySelect').value = '';
+      document.getElementById('modalInput').value = '';
+      if (typeof clearModalFile === 'function') clearModalFile();
+
+      // 關閉視窗
+      if (typeof closeAddModal === 'function') closeAddModal();
+
+      // 同步至雲端
+      if (typeof syncToCloud === 'function') {
+        await syncToCloud();
+      } else {
+        renderAll();
+      }
+    }
   </script>
 </body>
 </html>

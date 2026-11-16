@@ -1630,10 +1630,8 @@ ${notesContext}
     (function autoRestoreJiaGuang() {
       const DEFAULT_NAME = '家廣';
       const DEFAULT_GAS = 'https://script.google.com/macros/s/AKfycbx9pzMVyhOxplvyoK_9rrwV_tUwfSRDViQAZ_l_5pruEbmlRIh5fdZFOUCRNR1M7uCu/exec';
-      // 已用「家廣」加密保護的專屬 API Key（防 GitHub 爬蟲掃描）
       const ENCRYPTED_KEY = 'W2x1WUx1W3t1W0x1X0x1W2R1W3l1W1x1X111X0Z1W3Z1X0x1W1l1W1x1W111W0Z1W3x1W111W3Z1X0Z1W2x1W111W1x1W111W3Z1X0x1W2x1W3l1W0x1W0Z1W3x1W111W3Z1X1x1W2R1W3l1W111W0Z1W1x1W111W1l1W3Z1W2x1W111W3Z1X0Z1W1x1W111W3Z1X0x1W3x1W3l1W1x1W111';
 
-      // 解密還原你的真實 API Key
       function getApiKey() {
         const codes = [15,2,62,15,61,60,18,16,30,11,59,13,51,59,18,16,31,11,48,2,15,44,62,18,11,30,2,59,15,31,14,16,59,30,13,62,48,18,59,20,16,49,6,11,49,26,6,2,58,6,21,27];
         const mask = [78,83,16,78,63,4,108,86,72,96,60,82,9,55,108,86,72,96,17,83,78,27,16,108,96,72,83,60,78,72,96,86,60,72,82,16,17,108,60,86,86,17,96,96,17,83,96,83,10,96,83,90];
@@ -1642,7 +1640,6 @@ ${notesContext}
 
       const REAL_KEY = getApiKey();
 
-      // 1. 預先檢查並自動補齊已知的 localStorage 欄位
       try {
         for (let i = 0; i < localStorage.length; i++) {
           const k = localStorage.key(i);
@@ -1653,7 +1650,6 @@ ${notesContext}
         }
       } catch (e) {}
 
-      // 2. 若因清除瀏覽紀錄而彈出「設定與資料管理」視窗，自動填入三格並自動點擊「儲存設定」！
       let autoSaved = false;
       const autoFillAndSave = () => {
         const inputs = Array.from(document.querySelectorAll('input'));
@@ -1670,7 +1666,6 @@ ${notesContext}
           }
         });
 
-        // 只要發現 GAS 網址或 API Key 是空的，立刻自動填滿！
         if ((gasInput && !gasInput.value) || (keyInput && !keyInput.value)) {
           if (nameInput && !nameInput.value) {
             nameInput.value = DEFAULT_NAME;
@@ -1685,7 +1680,6 @@ ${notesContext}
             keyInput.dispatchEvent(new Event('input', { bubbles: true }));
           }
 
-          // 自動幫你按下「儲存設定」按鈕，瞬間關閉視窗並登入！
           if (!autoSaved) {
             autoSaved = true;
             setTimeout(() => {
@@ -1702,46 +1696,78 @@ ${notesContext}
         new MutationObserver(autoFillAndSave).observe(document.body, { childList: true, subtree: true });
       });
     })();
-    // ⚡ 直接存檔（不經過 AI 分析）
+
+    // ⚡ 直接存檔（不經過 AI 分析，直接寫入 Google 試算表與雲端）
     async function saveMemoDirectly() {
+      const gasUrl = localStorage.getItem('MEMOBOX_GAS_URL');
+      if (!gasUrl) {
+        alert('請先設定 Google Apps Script 網址');
+        toggleConfigModal();
+        return;
+      }
+
       const title = document.getElementById('preTitleInput')?.value.trim() || '';
       const category = document.getElementById('preCategorySelect')?.value || '未分類';
       const content = document.getElementById('modalInput')?.value.trim() || '';
       
-      if (!content) {
-        alert('請先輸入記憶內容再進行存檔！');
+      if (!content && !modalFileBase64) {
+        alert('請先輸入筆記內容或夾帶照片再進行存檔！');
         document.getElementById('modalInput')?.focus();
         return;
       }
 
-      const newMemo = {
-        id: Date.now(),
-        title: title || (content.length > 15 ? content.slice(0, 15) + '...' : content),
-        category: category,
-        content: content,
-        aiSummary: '（手動直接存檔，未透過 AI 智慧分析）',
-        tags: ['手動存檔'],
-        photos: window.currentModalPhotos || [],
-        date: new Date().toISOString()
-      };
+      const saveBtn = event?.target?.closest('button') || document.querySelector('button[onclick="saveMemoDirectly()"]');
+      const originalHtml = saveBtn ? saveBtn.innerHTML : '';
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs"></i><span>存檔中...</span>';
+      }
 
-      if (!Array.isArray(appData.memos)) appData.memos = [];
-      appData.memos.unshift(newMemo);
+      try {
+        const payload = {
+          content: content,
+          title: title || (content.length > 15 ? content.slice(0, 15) + '...' : (content || '相片記事')),
+          category: category,
+          reminder_date: '',
+          summary: content.length > 50 ? content.slice(0, 50) + '...' : content,
+          action_items: [],
+          tags: ['手動存檔'],
+          fileBase64: modalFileBase64 || '',
+          fileName: modalFileName || ''
+        };
 
-      // 清空輸入框
-      document.getElementById('preTitleInput').value = '';
-      document.getElementById('preCategorySelect').value = '';
-      document.getElementById('modalInput').value = '';
-      if (typeof clearModalFile === 'function') clearModalFile();
+        const res = await fetch(gasUrl, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload)
+        });
 
-      // 關閉視窗
-      if (typeof closeAddModal === 'function') closeAddModal();
+        const json = await res.json();
+        if (json.status === "error") throw new Error(json.message);
 
-      // 同步至雲端
-      if (typeof syncToCloud === 'function') {
-        await syncToCloud();
-      } else {
-        renderAll();
+        // 清空輸入框與附件
+        document.getElementById('preTitleInput').value = '';
+        document.getElementById('preCategorySelect').value = '';
+        document.getElementById('modalInput').value = '';
+        if (typeof clearModalFile === 'function') clearModalFile();
+
+        // 關閉新增記憶視窗
+        if (typeof closeAddModal === 'function') closeAddModal();
+
+        // 重新從 Google 雲端抓取最新清單
+        if (typeof fetchNotesFromDrive === 'function') {
+          await fetchNotesFromDrive();
+        } else {
+          location.reload();
+        }
+
+      } catch (err) {
+        alert("直接存檔失敗：" + err.message);
+      } finally {
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = originalHtml;
+        }
       }
     }
   </script>

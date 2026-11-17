@@ -885,7 +885,7 @@ const preTitle = document.getElementById('preTitleInput').value.trim();
           tags: tags ? tags.split(',').map(t => t.trim()) : [],
          fileBase64: modalFileBase64,
       fileName: modalFileName,
-      user_id: localStorage.getItem('MEMOBOX_USER_NAME') || 'jiaguang'
+      user_id: localStorage.getItem('MEMOBOX_USER_NAME') || '家廣'
     };
 
         const res = await fetch(gasUrl, {
@@ -1648,8 +1648,10 @@ ${notesContext}
           const kl = k.toLowerCase();
           if (kl.includes('gas') || kl.includes('url')) localStorage.setItem(k, DEFAULT_GAS);
           if (kl.includes('key') || kl.includes('gemini') || kl.includes('api')) localStorage.setItem(k, REAL_KEY);
-          if (kl.includes('name') || kl.includes('user')) localStorage.setItem(k, DEFAULT_NAME);
-        }
+          // 如果使用者還沒有設定過名字，才給預設的 '家廣'；如果家人已經自訂了名字，就保留它不覆蓋
+if ((kl.includes('name') || kl.includes('user')) && !localStorage.getItem(k)) {
+  localStorage.setItem(k, DEFAULT_NAME);
+}
       } catch (e) {}
 
       let autoSaved = false;

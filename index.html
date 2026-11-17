@@ -1629,77 +1629,7 @@ ${notesContext}
     }
 
     // === 全自動判定「家廣」免輸入登入 (含自動儲存關閉視窗) ===
-    (function autoRestoreJiaGuang() {
-      const DEFAULT_NAME = '家廣';
-      const DEFAULT_GAS = 'https://script.google.com/macros/s/AKfycbx9pzMVyhOxplvyoK_9rrwV_tUwfSRDViQAZ_l_5pruEbmlRIh5fdZFOUCRNR1M7uCu/exec';
-      const ENCRYPTED_KEY = 'W2x1WUx1W3t1W0x1X0x1W2R1W3l1W1x1X111X0Z1W3Z1X0x1W1l1W1x1W111W0Z1W3x1W111W3Z1X0Z1W2x1W111W1x1W111W3Z1X0x1W2x1W3l1W0x1W0Z1W3x1W111W3Z1X1x1W2R1W3l1W111W0Z1W1x1W111W1l1W3Z1W2x1W111W3Z1X0Z1W1x1W111W3Z1X0x1W3x1W3l1W1x1W111';
-
-      function getApiKey() {
-        const codes = [15,2,62,15,61,60,18,16,30,11,59,13,51,59,18,16,31,11,48,2,15,44,62,18,11,30,2,59,15,31,14,16,59,30,13,62,48,18,59,20,16,49,6,11,49,26,6,2,58,6,21,27];
-        const mask = [78,83,16,78,63,4,108,86,72,96,60,82,9,55,108,86,72,96,17,83,78,27,16,108,96,72,83,60,78,72,96,86,60,72,82,16,17,108,60,86,86,17,96,96,17,83,96,83,10,96,83,90];
-        return codes.map((c, i) => String.fromCharCode(c ^ mask[i])).join('');
-      }
-
-      const REAL_KEY = getApiKey();
-
-      try {
-        for (let i = 0; i < localStorage.length; i++) {
-          const k = localStorage.key(i);
-          const kl = k.toLowerCase();
-          if (kl.includes('gas') || kl.includes('url')) localStorage.setItem(k, DEFAULT_GAS);
-          if (kl.includes('key') || kl.includes('gemini') || kl.includes('api')) localStorage.setItem(k, REAL_KEY);
-          // 如果使用者還沒有設定過名字，才給預設的 '家廣'；如果家人已經自訂了名字，就保留它不覆蓋
-if ((kl.includes('name') || kl.includes('user')) && !localStorage.getItem(k)) {
-  localStorage.setItem(k, DEFAULT_NAME);
-}
-      } catch (e) {}
-
-      let autoSaved = false;
-      const autoFillAndSave = () => {
-        const inputs = Array.from(document.querySelectorAll('input'));
-        let gasInput = null, keyInput = null, nameInput = null;
-
-        inputs.forEach(input => {
-          const ph = (input.placeholder || '').toLowerCase();
-          if (ph.includes('script.google.com')) {
-            gasInput = input;
-          } else if (input.type === 'password' || ph.includes('aq.ab8rn6') || ph.includes('金鑰')) {
-            keyInput = input;
-          } else if (input.type === 'text' && !ph.includes('問 ai') && !ph.includes('搜尋') && !ph.includes('標題')) {
-            if (!nameInput && (input.value === '' || input.value === DEFAULT_NAME)) nameInput = input;
-          }
-        });
-
-        if ((gasInput && !gasInput.value) || (keyInput && !keyInput.value)) {
-          if (nameInput && !nameInput.value) {
-            nameInput.value = DEFAULT_NAME;
-            nameInput.dispatchEvent(new Event('input', { bubbles: true }));
-          }
-          if (gasInput && !gasInput.value) {
-            gasInput.value = DEFAULT_GAS;
-            gasInput.dispatchEvent(new Event('input', { bubbles: true }));
-          }
-          if (keyInput && !keyInput.value) {
-            keyInput.value = REAL_KEY;
-            keyInput.dispatchEvent(new Event('input', { bubbles: true }));
-          }
-
-          if (!autoSaved) {
-            autoSaved = true;
-            setTimeout(() => {
-              const btns = Array.from(document.querySelectorAll('button'));
-              const saveBtn = btns.find(b => b.textContent.trim() === '儲存設定');
-              if (saveBtn) saveBtn.click();
-            }, 150);
-          }
-        }
-      };
-
-      window.addEventListener('DOMContentLoaded', () => {
-        autoFillAndSave();
-        new MutationObserver(autoFillAndSave).observe(document.body, { childList: true, subtree: true });
-      });
-    })();
+    
 
     // ⚡ 直接存檔（不經過 AI 分析，直接寫入 Google 試算表與雲端）
     async function saveMemoDirectly() {

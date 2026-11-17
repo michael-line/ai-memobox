@@ -883,9 +883,10 @@ const preTitle = document.getElementById('preTitleInput').value.trim();
           summary: summary,
           action_items: uniqueTodoLines,
           tags: tags ? tags.split(',').map(t => t.trim()) : [],
-          fileBase64: modalFileBase64,
-          fileName: modalFileName
-        };
+         fileBase64: modalFileBase64,
+      fileName: modalFileName,
+      user_id: localStorage.getItem('MEMOBOX_USER_NAME') || 'jiaguang'
+    };
 
         const res = await fetch(gasUrl, {
           method: "POST",
@@ -924,7 +925,8 @@ document.getElementById('preTitleInput').value = "";
     try {
       // 1. 抓取指定頁數的 10 筆記憶卡片（加速首頁卡片渲染）
       const separator = gasUrl.includes('?') ? '&' : '?';
-      const pagedUrl = `${gasUrl}${separator}page=${currentPage}&limit=${PAGE_LIMIT}`;
+    const currentUserName = localStorage.getItem('MEMOBOX_USER_NAME') || 'jiaguang';
+    const pagedUrl = `${gasUrl}${separator}page=${currentPage}&limit=${PAGE_LIMIT}&user=${encodeURIComponent(currentUserName)}`;
       const res = await fetch(pagedUrl);
       const json = await res.json();
 

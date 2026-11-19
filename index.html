@@ -1659,16 +1659,17 @@ ${notesContext}
 
       try {
         const payload = {
-          content: content,
-          title: title || (content.length > 15 ? content.slice(0, 15) + '...' : (content || '相片記事')),
-          category: category,
-          reminder_date: '',
-          summary: content.length > 50 ? content.slice(0, 50) + '...' : content,
-          action_items: [],
-          tags: ['手動存檔'],
-          fileBase64: modalFileBase64 || '',
-          fileName: modalFileName || ''
-        };
+  content: content,
+  title: title || (content.length > 15 ? content.slice(0, 15) + '...' : (content || '相片記事')),
+  category: category,
+  reminder_date: '',
+  summary: content.length > 50 ? content.slice(0, 50) + '...' : content,
+  action_items: [],
+  tags: ['手動存檔'],
+  fileBase64: modalFileBase64 || '',
+  fileName: modalFileName || '',
+  user_id: localStorage.getItem('MEMOBOX_USER_NAME') || '家廣' // <-- 補上這一行
+};
 
         const res = await fetch(gasUrl, {
           method: "POST",
